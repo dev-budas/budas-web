@@ -21,16 +21,28 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0B1929] flex items-center justify-center px-4">
-      <div className="w-full max-w-sm">
+    <div className="min-h-screen relative flex items-center justify-center px-4">
+
+      {/* Background */}
+      <div className="absolute inset-0 overflow-hidden">
+        <img
+          src="/images/hero-bg.jpg"
+          alt=""
+          className="w-full h-full object-cover object-center scale-105"
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#0B1929]/95 via-[#0B1929]/85 to-[#1B3A5C]/80" />
+      </div>
+
+      {/* Content */}
+      <div className="relative z-10 w-full max-w-sm">
 
         {/* Logo */}
-        <div className="flex justify-center mb-10">
-          <Logo variant="light" />
+        <div className="flex justify-center mb-12">
+          <Logo variant="light" size="lg" />
         </div>
 
         {/* Card */}
-        <div className="bg-white/[0.06] border border-white/10 rounded-2xl p-8">
+        <div className="bg-white/[0.07] backdrop-blur-xl border border-white/12 rounded-2xl p-8 shadow-2xl">
           <div className="mb-7">
             <h1 className="text-white font-semibold text-xl mb-1">Acceso al CRM</h1>
             <p className="text-white/40 text-sm">Introduce tus credenciales para continuar.</p>
@@ -83,7 +95,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isPending}
-              className="w-full h-10 rounded-lg bg-accent hover:bg-accent-hover text-white font-semibold text-sm transition-all duration-200 active:scale-[0.98] disabled:opacity-60 disabled:pointer-events-none mt-2"
+              className="w-full h-11 rounded-xl bg-accent hover:bg-accent-hover text-white font-semibold text-sm transition-all duration-200 active:scale-[0.98] disabled:opacity-60 disabled:pointer-events-none mt-1"
             >
               {isPending ? "Entrando..." : "Entrar"}
             </button>
