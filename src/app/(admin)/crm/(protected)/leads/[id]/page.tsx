@@ -41,6 +41,7 @@ export default async function LeadDetailPage({
       visits={visits}
       profiles={profiles}
       isAdmin={isAdmin}
+      currentUserId={user.id}
     />
   );
 }

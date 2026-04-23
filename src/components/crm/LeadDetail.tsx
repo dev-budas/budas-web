@@ -14,6 +14,7 @@ import {
   Check,
   X,
   User,
+  Lock,
 } from "lucide-react";
 
 /* ── Status Badge ──────────────────────────────────────────────────────────── */
@@ -30,7 +31,7 @@ function StatusBadge({ status }: { status: LeadStatus }) {
 }
 
 /* ── Status Selector ───────────────────────────────────────────────────────── */
-function StatusSelector({ leadId, current }: { leadId: string; current: LeadStatus }) {
+function StatusSelector({ leadId, current, disabled }: { leadId: string; current: LeadStatus; disabled?: boolean }) {
   const [value, setValue] = useState(current);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
@@ -53,6 +54,20 @@ function StatusSelector({ leadId, current }: { leadId: string; current: LeadStat
   }
 
   const cfg = LEAD_STATUS_CONFIG[value];
+
+  if (disabled) {
+    return (
+      <div className="flex items-center gap-2">
+        <span
+          className="text-xs font-medium px-2.5 py-1 rounded-full"
+          style={{ backgroundColor: `${cfg.color}18`, color: cfg.color }}
+        >
+          {cfg.label}
+        </span>
+        <Lock className="w-3 h-3 text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-2">
@@ -87,11 +102,13 @@ function AgentSelector({
   currentAgentId,
   profiles,
   isAdmin,
+  currentUserId,
 }: {
   leadId: string;
   currentAgentId: string | null;
   profiles: { id: string; full_name: string }[];
   isAdmin: boolean;
+  currentUserId: string;
 }) {
   const [value, setValue] = useState(currentAgentId ?? "");
   const [saving, setSaving] = useState(false);
@@ -114,40 +131,67 @@ function AgentSelector({
     }
   }
 
-  if (!isAdmin) {
-    const agent = profiles.find((p) => p.id === currentAgentId);
+  async function handleClaim() {
+    setSaving(true);
+    try {
+      await assignAgent(leadId, currentUserId);
+      router.refresh();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (isAdmin) {
     return (
-      <p className="text-sm text-foreground">{agent?.full_name ?? "Sin asignar"}</p>
+      <div className="space-y-2">
+        <select
+          value={value}
+          onChange={handleChange}
+          className="w-full h-9 px-3 text-sm rounded-lg border border-border bg-surface focus:outline-none focus:ring-1 focus:ring-primary/30"
+        >
+          <option value="">Sin asignar</option>
+          {profiles.map((p) => (
+            <option key={p.id} value={p.id}>{p.full_name}</option>
+          ))}
+        </select>
+        {dirty && (
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="w-full h-8 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary-hover transition-colors disabled:opacity-60"
+          >
+            {saving ? "Guardando..." : "Asignar agente"}
+          </button>
+        )}
+      </div>
     );
   }
 
-  return (
-    <div className="space-y-2">
-      <select
-        value={value}
-        onChange={handleChange}
-        className="w-full h-9 px-3 text-sm rounded-lg border border-border bg-surface focus:outline-none focus:ring-1 focus:ring-primary/30"
-      >
-        <option value="">Sin asignar</option>
-        {profiles.map((p) => (
-          <option key={p.id} value={p.id}>{p.full_name}</option>
-        ))}
-      </select>
-      {dirty && (
+  // Agent: if unassigned, allow self-assign
+  if (!currentAgentId) {
+    return (
+      <div className="space-y-2">
+        <p className="text-sm text-muted-foreground">Sin asignar</p>
         <button
-          onClick={handleSave}
+          onClick={handleClaim}
           disabled={saving}
-          className="w-full h-8 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary-hover transition-colors disabled:opacity-60"
+          className="w-full h-8 rounded-lg bg-accent/10 text-accent border border-accent/20 text-xs font-semibold hover:bg-accent/20 transition-colors disabled:opacity-60"
         >
-          {saving ? "Guardando..." : "Asignar agente"}
+          {saving ? "Asignando..." : "Asignarme este lead"}
         </button>
-      )}
-    </div>
+      </div>
+    );
+  }
+
+  // Agent: show assigned name (read-only)
+  const agent = profiles.find((p) => p.id === currentAgentId);
+  return (
+    <p className="text-sm text-foreground">{agent?.full_name ?? "Sin asignar"}</p>
   );
 }
 
 /* ── Notes Editor ──────────────────────────────────────────────────────────── */
-function NotesEditor({ leadId, initial }: { leadId: string; initial: string }) {
+function NotesEditor({ leadId, initial, disabled }: { leadId: string; initial: string; disabled?: boolean }) {
   const [notes, setNotes] = useState(initial);
   const [saved, setSaved] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -158,6 +202,14 @@ function NotesEditor({ leadId, initial }: { leadId: string; initial: string }) {
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     });
+  }
+
+  if (disabled) {
+    return (
+      <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+        {initial || "Sin notas"}
+      </p>
+    );
   }
 
   return (
@@ -190,11 +242,14 @@ function VisitForm({
   leadId,
   profiles,
   currentAgentId,
+  disabled,
 }: {
   leadId: string;
   profiles: { id: string; full_name: string }[];
   currentAgentId: string | null;
+  disabled?: boolean;
 }) {
+  if (disabled) return null;
   const [open, setOpen] = useState(false);
   const [scheduledAt, setScheduledAt] = useState("");
   const [address, setAddress] = useState("");
@@ -428,9 +483,11 @@ interface LeadDetailProps {
   visits: Visit[];
   profiles: { id: string; full_name: string }[];
   isAdmin: boolean;
+  currentUserId: string;
 }
 
-export function LeadDetail({ lead, visits, profiles, isAdmin }: LeadDetailProps) {
+export function LeadDetail({ lead, visits, profiles, isAdmin, currentUserId }: LeadDetailProps) {
+  const canEdit = isAdmin || lead.assigned_agent === currentUserId;
   const messages = (lead.whatsapp_conversation ?? []) as WaMessage[];
 
   return (
@@ -456,7 +513,15 @@ export function LeadDetail({ lead, visits, profiles, isAdmin }: LeadDetailProps)
               <p className="text-sm text-muted-foreground">{lead.phone}</p>
             </div>
           </div>
-          <StatusBadge status={lead.status} />
+          <div className="flex items-center gap-2">
+            {!canEdit && (
+              <span className="flex items-center gap-1 text-xs font-medium text-muted-foreground bg-border/50 px-2.5 py-1 rounded-full">
+                <Lock className="w-3 h-3" />
+                Solo lectura
+              </span>
+            )}
+            <StatusBadge status={lead.status} />
+          </div>
         </div>
       </div>
 
@@ -493,8 +558,9 @@ export function LeadDetail({ lead, visits, profiles, isAdmin }: LeadDetailProps)
             <div className="flex items-center gap-2 mb-4">
               <StickyNote className="w-4 h-4 text-muted-foreground" />
               <h2 className="text-sm font-semibold text-foreground">Notas</h2>
+              {!canEdit && <Lock className="w-3 h-3 text-muted-foreground ml-auto" />}
             </div>
-            <NotesEditor leadId={lead.id} initial={lead.notes ?? ""} />
+            <NotesEditor leadId={lead.id} initial={lead.notes ?? ""} disabled={!canEdit} />
           </div>
 
           {/* WhatsApp conversation */}
@@ -516,7 +582,7 @@ export function LeadDetail({ lead, visits, profiles, isAdmin }: LeadDetailProps)
           {/* Status */}
           <div className="bg-surface border border-border rounded-xl p-4">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Estado</p>
-            <StatusSelector leadId={lead.id} current={lead.status} />
+            <StatusSelector leadId={lead.id} current={lead.status} disabled={!canEdit} />
           </div>
 
           {/* Agent */}
@@ -529,6 +595,7 @@ export function LeadDetail({ lead, visits, profiles, isAdmin }: LeadDetailProps)
               currentAgentId={lead.assigned_agent ?? null}
               profiles={profiles}
               isAdmin={isAdmin}
+              currentUserId={currentUserId}
             />
           </div>
 
@@ -543,6 +610,7 @@ export function LeadDetail({ lead, visits, profiles, isAdmin }: LeadDetailProps)
                 leadId={lead.id}
                 profiles={profiles}
                 currentAgentId={lead.assigned_agent ?? null}
+                disabled={!canEdit}
               />
             </div>
           </div>

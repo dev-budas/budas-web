@@ -189,10 +189,12 @@ export function PipelineBoard({
   leads: initialLeads,
   profiles,
   isAdmin,
+  currentUserId,
 }: {
   leads: Lead[];
   profiles: { id: string; full_name: string }[];
   isAdmin: boolean;
+  currentUserId: string;
 }) {
   const [leads, setLeads] = useState(initialLeads);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -274,6 +276,7 @@ export function PipelineBoard({
           lead={editingLead}
           profiles={profiles}
           isAdmin={isAdmin}
+          currentUserId={currentUserId}
           onClose={() => setEditingLead(null)}
           onStatusChange={handleStatusChangeFromModal}
         />

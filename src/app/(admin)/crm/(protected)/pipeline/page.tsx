@@ -30,7 +30,7 @@ export default async function PipelinePage() {
         <p className="text-sm text-muted-foreground mt-0.5">{leads.length} leads en total</p>
       </div>
 
-      <PipelineBoard leads={leads} profiles={profiles} isAdmin={isAdmin} />
+      <PipelineBoard leads={leads} profiles={profiles} isAdmin={isAdmin} currentUserId={user?.id ?? ""} />
     </div>
   );
 }
