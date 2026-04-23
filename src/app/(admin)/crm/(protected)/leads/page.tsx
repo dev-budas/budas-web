@@ -105,14 +105,11 @@ export default async function LeadsPage({
               <tbody className="divide-y divide-border">
                 {filtered.map((lead) => {
                   const config = LEAD_STATUS_CONFIG[lead.status];
+                  if (!config) return null;
                   return (
-                    <tr
-                      key={lead.id}
-                      className="hover:bg-border/20 transition-colors cursor-pointer"
-                      onClick={() => { window.location.href = `/crm/leads/${lead.id}`; }}
-                    >
+                    <tr key={lead.id} className="hover:bg-border/20 transition-colors">
                       <td className="px-5 py-4">
-                        <div className="flex items-center gap-3">
+                        <a href={`/crm/leads/${lead.id}`} className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
                             <span className="text-xs font-bold text-primary">
                               {lead.name.charAt(0).toUpperCase()}
@@ -122,27 +119,35 @@ export default async function LeadsPage({
                             <p className="font-medium text-foreground">{lead.name}</p>
                             <p className="text-xs text-muted-foreground">{lead.phone}</p>
                           </div>
-                        </div>
+                        </a>
                       </td>
                       <td className="px-5 py-4 hidden md:table-cell">
-                        <p className="text-foreground">{lead.property_city ?? "—"}</p>
-                        <p className="text-xs text-muted-foreground capitalize">{lead.property_type?.replace("_", " ") ?? "—"}</p>
+                        <a href={`/crm/leads/${lead.id}`} className="block">
+                          <p className="text-foreground">{lead.property_city ?? "—"}</p>
+                          <p className="text-xs text-muted-foreground capitalize">{lead.property_type?.replace("_", " ") ?? "—"}</p>
+                        </a>
                       </td>
                       <td className="px-5 py-4">
-                        <span
-                          className="text-[11px] font-medium px-2.5 py-1 rounded-full whitespace-nowrap"
-                          style={{ backgroundColor: `${config.color}18`, color: config.color }}
-                        >
-                          {config.label}
-                        </span>
+                        <a href={`/crm/leads/${lead.id}`} className="block">
+                          <span
+                            className="text-[11px] font-medium px-2.5 py-1 rounded-full whitespace-nowrap"
+                            style={{ backgroundColor: `${config.color}18`, color: config.color }}
+                          >
+                            {config.label}
+                          </span>
+                        </a>
                       </td>
                       <td className="px-5 py-4 hidden lg:table-cell text-xs text-muted-foreground">
-                        {lead.assigned_agent ?? "Sin asignar"}
+                        <a href={`/crm/leads/${lead.id}`} className="block">
+                          {lead.assigned_agent ?? "Sin asignar"}
+                        </a>
                       </td>
                       <td className="px-5 py-4 hidden sm:table-cell text-xs text-muted-foreground">
-                        {new Date(lead.created_at).toLocaleDateString("es-ES", {
-                          day: "numeric", month: "short", year: "numeric",
-                        })}
+                        <a href={`/crm/leads/${lead.id}`} className="block">
+                          {new Date(lead.created_at).toLocaleDateString("es-ES", {
+                            day: "numeric", month: "short", year: "numeric",
+                          })}
+                        </a>
                       </td>
                     </tr>
                   );
