@@ -94,9 +94,8 @@ export function HeroForm() {
           email:         data.email || undefined,
           property_city: data.property_city,
           property_type: data.property_type,
-          notes: isResidential && (data.rooms || data.bathrooms)
-            ? `Habitaciones: ${data.rooms ?? "-"} · Baños: ${data.bathrooms ?? "-"}`
-            : undefined,
+          rooms:         isResidential && data.rooms ? Number(data.rooms) : undefined,
+          bathrooms:     isResidential && data.bathrooms ? Number(data.bathrooms) : undefined,
         }),
       });
       if (!res.ok) throw new Error();

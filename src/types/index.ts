@@ -36,6 +36,8 @@ export interface Lead {
   property_address?: string;
   property_city?: string;
   estimated_value?: number;
+  rooms?: number;
+  bathrooms?: number;
 
   // Qualification
   status: LeadStatus;

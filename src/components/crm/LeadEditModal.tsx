@@ -381,6 +381,8 @@ export function LeadEditModal({
               <div className="grid grid-cols-2 gap-3">
                 <InfoItem label="Ciudad" value={lead.property_city ?? "—"} />
                 <InfoItem label="Tipo" value={lead.property_type?.replace("_", " ") ?? "—"} />
+                <InfoItem label="Habitaciones" value={lead.rooms != null ? String(lead.rooms) : "—"} />
+                <InfoItem label="Baños" value={lead.bathrooms != null ? String(lead.bathrooms) : "—"} />
                 <InfoItem label="Valor est." value={lead.estimated_value ? `${lead.estimated_value.toLocaleString("es-ES")} €` : "—"} />
                 <InfoItem label="Urgencia" value={lead.urgency?.replace("_", " ") ?? "—"} />
               </div>

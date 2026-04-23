@@ -472,6 +472,8 @@ export function LeadDetail({ lead, visits, profiles, isAdmin }: LeadDetailProps)
               <InfoRow label="Email" value={lead.email ?? "—"} />
               <InfoRow label="Ciudad" value={lead.property_city ?? "—"} />
               <InfoRow label="Tipo de propiedad" value={lead.property_type?.replace("_", " ") ?? "—"} />
+              <InfoRow label="Habitaciones" value={lead.rooms != null ? String(lead.rooms) : "—"} />
+              <InfoRow label="Baños" value={lead.bathrooms != null ? String(lead.bathrooms) : "—"} />
               <InfoRow label="Valor estimado" value={lead.estimated_value ? `${lead.estimated_value.toLocaleString("es-ES")} €` : "—"} />
               <InfoRow label="Propietario" value={lead.is_owner === true ? "Sí" : lead.is_owner === false ? "No" : "—"} />
               <InfoRow label="Urgencia" value={lead.urgency?.replace("_", " ") ?? "—"} />
