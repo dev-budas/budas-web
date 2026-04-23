@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { sendQualifiedLeadEmail, sendUnqualifiedLeadEmail } from "@/lib/email";
 import type { LeadStatus } from "@/types";
 
 async function getSession() {
@@ -49,6 +50,18 @@ export async function updateLeadStatus(leadId: string, status: LeadStatus) {
   revalidatePath("/crm/leads");
   revalidatePath("/crm/pipeline");
   revalidatePath(`/crm/leads/${leadId}`);
+
+  if (status === "calificado" || status === "no_calificado") {
+    const { data: lead } = await supabase
+      .from("leads")
+      .select("id, name, phone, property_city, property_type")
+      .eq("id", leadId)
+      .single();
+    if (lead) {
+      const fn = status === "calificado" ? sendQualifiedLeadEmail : sendUnqualifiedLeadEmail;
+      fn(lead).catch((e) => console.error("[Email]", e));
+    }
+  }
 }
 
 export async function addLeadNote(leadId: string, content: string) {

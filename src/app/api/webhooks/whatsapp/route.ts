@@ -7,6 +7,7 @@ import {
   appendWhatsAppMessage,
 } from "@/lib/supabase";
 import { formatPhone } from "@/lib/utils";
+import { sendQualifiedLeadEmail, sendUnqualifiedLeadEmail } from "@/lib/email";
 import type { WhatsAppWebhookPayload, Lead } from "@/types";
 
 const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN!;
@@ -108,5 +109,13 @@ async function handleIncomingMessage(phone: string, text: string) {
       .from("leads")
       .update(updatePayload)
       .eq("id", lead.id);
+
+    // Notify team by email
+    const emailLead = { id: lead.id, name: lead.name, phone: lead.phone, property_city: lead.property_city, property_type: lead.property_type };
+    if (result.qualified) {
+      await sendQualifiedLeadEmail(emailLead).catch((e) => console.error("[Email] qualified:", e));
+    } else {
+      await sendUnqualifiedLeadEmail(emailLead).catch((e) => console.error("[Email] unqualified:", e));
+    }
   }
 }
