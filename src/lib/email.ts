@@ -49,6 +49,35 @@ export async function sendQualifiedLeadEmail(lead: LeadSummary) {
   });
 }
 
+export async function sendLeadAssignedEmail(lead: LeadSummary, agentId: string) {
+  const supabase = createServiceClient();
+  const { data: { user } } = await supabase.auth.admin.getUserById(agentId);
+  const agentEmail = user?.email;
+  if (!agentEmail) return;
+
+  const leadUrl = `${APP_URL}/crm/leads/${lead.id}`;
+  const propertyInfo = [lead.property_city, lead.property_type?.replace("_", " ")]
+    .filter(Boolean)
+    .join(" · ");
+
+  await getResend().emails.send({
+    from: FROM,
+    to: agentEmail,
+    subject: `Lead asignado: ${lead.name}`,
+    html: buildEmail({
+      title: "Nuevo lead asignado",
+      accentColor: "#C9A96E",
+      badge: "Asignado a ti",
+      badgeColor: "#C9A96E",
+      headline: lead.name,
+      subline: lead.phone + (propertyInfo ? ` · ${propertyInfo}` : ""),
+      body: "Se te ha asignado un nuevo lead calificado. Entra en el CRM para ver el historial de conversación y comenzar el seguimiento.",
+      ctaLabel: "Ver lead",
+      ctaUrl: leadUrl,
+    }),
+  });
+}
+
 export async function sendUnqualifiedLeadEmail(lead: LeadSummary) {
   const to = await getTeamEmails();
   if (!to.length) return;

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { sendQualifiedLeadEmail, sendUnqualifiedLeadEmail } from "@/lib/email";
+import { sendQualifiedLeadEmail, sendUnqualifiedLeadEmail, sendLeadAssignedEmail } from "@/lib/email";
 import type { LeadStatus } from "@/types";
 
 async function getSession() {
@@ -113,6 +113,22 @@ export async function assignAgent(leadId: string, agentId: string | null) {
   if (error) throw error;
   revalidatePath(`/crm/leads/${leadId}`);
   revalidatePath("/crm/pipeline");
+
+  if (agentId) {
+    const { data: lead } = await supabase
+      .from("leads")
+      .select("id, name, phone, property_city, property_type")
+      .eq("id", leadId)
+      .single();
+    if (lead) {
+      try {
+        await sendLeadAssignedEmail(lead, agentId);
+        console.log(`[Email] assignment sent lead=${leadId} agent=${agentId}`);
+      } catch (e) {
+        console.error("[Email] assignment failed:", e);
+      }
+    }
+  }
 }
 
 export async function createVisit(data: {
