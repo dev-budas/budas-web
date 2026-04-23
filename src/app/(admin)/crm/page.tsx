@@ -1,90 +1,106 @@
-import { Users, TrendingUp, MessageSquare, Home } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { createClient } from "@/lib/supabase/server";
 import { LEAD_STATUS_CONFIG } from "@/types";
+import { Users, TrendingUp, MessageSquare, CalendarCheck } from "lucide-react";
+import type { Lead } from "@/types";
 
-const mockStats = [
-  { label: "Leads totales", value: "47", change: "+12%", icon: Users, positive: true },
-  { label: "Calificados", value: "18", change: "+8%", icon: TrendingUp, positive: true },
-  { label: "Conversaciones activas", value: "9", change: "-2%", icon: MessageSquare, positive: false },
-  { label: "Captados este mes", value: "4", change: "+100%", icon: Home, positive: true },
-];
+export default async function CRMDashboard() {
+  const supabase = await createClient();
 
-const recentLeads = [
-  { id: "1", name: "Carlos Martínez", phone: "+34 612 345 678", city: "Barcelona", status: "calificado" as const, created_at: "2026-04-23T10:30:00Z" },
-  { id: "2", name: "Ana López", phone: "+34 698 123 456", city: "Sitges", status: "bot_enviado" as const, created_at: "2026-04-23T09:15:00Z" },
-  { id: "3", name: "Roberto Silva", phone: "+34 677 890 123", city: "Castelldefels", status: "respondio" as const, created_at: "2026-04-23T08:00:00Z" },
-  { id: "4", name: "Marta Fernández", phone: "+34 654 321 987", city: "Tarragona", status: "en_seguimiento" as const, created_at: "2026-04-22T17:45:00Z" },
-  { id: "5", name: "Javier Ruiz", phone: "+34 601 234 567", city: "Salou", status: "nuevo" as const, created_at: "2026-04-22T15:20:00Z" },
-];
+  const { data: leads } = await supabase
+    .from("leads")
+    .select("*")
+    .order("created_at", { ascending: false });
 
-export default function CRMDashboard() {
+  const all = (leads ?? []) as Lead[];
+
+  const stats = {
+    total:       all.length,
+    calificados: all.filter((l) => l.status === "calificado").length,
+    activos:     all.filter((l) => ["bot_enviado", "respondio", "en_seguimiento"].includes(l.status)).length,
+    captados:    all.filter((l) => l.status === "captado").length,
+  };
+
+  const recent = all.slice(0, 8);
+
+  const today = new Date().toLocaleDateString("es-ES", {
+    weekday: "long", day: "numeric", month: "long", year: "numeric",
+  });
+
   return (
-    <div className="p-8">
+    <div className="p-6 lg:p-8 max-w-6xl mx-auto">
+
       {/* Header */}
       <div className="mb-8">
-        <h1 className="heading-1 text-2xl text-foreground mb-1">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">
-          Resumen de actividad · {new Date().toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" })}
-        </p>
+        <p className="text-xs text-muted-foreground uppercase tracking-widest mb-1 capitalize">{today}</p>
+        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
       </div>
 
-      {/* Stats grid */}
+      {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {mockStats.map(({ label, value, change, icon: Icon, positive }) => (
-          <Card key={label}>
-            <CardContent className="p-5">
-              <div className="flex items-start justify-between mb-4">
-                <div className="w-9 h-9 rounded-lg bg-primary/8 flex items-center justify-center">
-                  <Icon className="w-4 h-4 text-primary" />
-                </div>
-                <span className={`text-xs font-medium ${positive ? "text-success" : "text-destructive"}`}>
-                  {change}
-                </span>
-              </div>
-              <p className="heading-1 text-2xl text-foreground mb-0.5">{value}</p>
-              <p className="text-xs text-muted-foreground">{label}</p>
-            </CardContent>
-          </Card>
+        {[
+          { label: "Total leads",    value: stats.total,       icon: Users,         color: "text-blue-600",  bg: "bg-blue-50" },
+          { label: "Calificados",    value: stats.calificados, icon: TrendingUp,    color: "text-accent",    bg: "bg-accent/10" },
+          { label: "Conversaciones", value: stats.activos,     icon: MessageSquare, color: "text-purple-600",bg: "bg-purple-50" },
+          { label: "Captados",       value: stats.captados,    icon: CalendarCheck, color: "text-primary",   bg: "bg-primary/10" },
+        ].map(({ label, value, icon: Icon, color, bg }) => (
+          <div key={label} className="bg-surface border border-border rounded-xl p-5">
+            <div className={`w-9 h-9 rounded-lg ${bg} flex items-center justify-center mb-3`}>
+              <Icon className={`w-4 h-4 ${color}`} />
+            </div>
+            <p className="text-2xl font-bold text-foreground">{value}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
+          </div>
         ))}
       </div>
 
-      {/* Recent leads */}
-      <Card>
-        <CardHeader className="pb-0">
-          <CardTitle>Últimos leads</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="divide-y divide-border">
-            {recentLeads.map((lead) => {
-              const statusConfig = LEAD_STATUS_CONFIG[lead.status];
+      {/* Recent Leads */}
+      <div className="bg-surface border border-border rounded-xl overflow-hidden">
+        <div className="px-6 py-4 border-b border-border flex items-center justify-between">
+          <h2 className="font-semibold text-foreground">Leads recientes</h2>
+          <a href="/crm/leads" className="text-xs text-accent hover:underline">Ver todos →</a>
+        </div>
+        <div className="divide-y divide-border">
+          {recent.length === 0 ? (
+            <p className="px-6 py-8 text-center text-sm text-muted-foreground">
+              No hay leads todavía.
+            </p>
+          ) : (
+            recent.map((lead) => {
+              const config = LEAD_STATUS_CONFIG[lead.status];
               return (
-                <div key={lead.id} className="flex items-center justify-between px-6 py-4 hover:bg-background/50 transition-colors">
-                  <div className="flex items-center gap-4">
-                    <div className="w-9 h-9 rounded-full bg-primary/8 flex items-center justify-center flex-shrink-0">
-                      <span className="text-sm font-semibold text-primary">
-                        {lead.name.charAt(0)}
-                      </span>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{lead.name}</p>
-                      <p className="text-xs text-muted-foreground">{lead.city} · {lead.phone}</p>
-                    </div>
+                <a
+                  key={lead.id}
+                  href={`/crm/leads/${lead.id}`}
+                  className="flex items-center gap-4 px-6 py-4 hover:bg-border/30 transition-colors"
+                >
+                  <div className="w-9 h-9 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
+                    <span className="text-xs font-bold text-primary">
+                      {lead.name.charAt(0).toUpperCase()}
+                    </span>
                   </div>
-                  <Badge
-                    style={{
-                      backgroundColor: `${statusConfig.color}18`,
-                      color: statusConfig.color,
-                    }}
-                  >
-                    {statusConfig.label}
-                  </Badge>
-                </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground truncate">{lead.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {lead.property_city} · {lead.phone}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3 flex-shrink-0">
+                    <span
+                      className="text-[11px] font-medium px-2.5 py-1 rounded-full"
+                      style={{ backgroundColor: `${config.color}18`, color: config.color }}
+                    >
+                      {config.label}
+                    </span>
+                    <span className="text-xs text-muted-foreground hidden sm:block">
+                      {new Date(lead.created_at).toLocaleDateString("es-ES", { day: "numeric", month: "short" })}
+                    </span>
+                  </div>
+                </a>
               );
-            })}
-          </div>
-        </CardContent>
-      </Card>
+            })
+          )}
+        </div>
+      </div>
     </div>
   );
 }
