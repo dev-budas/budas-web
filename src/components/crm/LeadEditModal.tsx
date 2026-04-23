@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect, useTransition } from "react";
+import { useState, useEffect } from "react";
 import { X, MessageSquare, StickyNote, CalendarPlus, User, MapPin, Lock } from "lucide-react";
 import { LEAD_STATUS_CONFIG } from "@/types";
-import type { Lead, LeadStatus, Visit } from "@/types";
-import { updateLeadStatus, updateLeadNotes, assignAgent, createVisit } from "@/app/(admin)/crm/actions";
+import type { Lead, LeadNote, LeadStatus, Visit } from "@/types";
+import { updateLeadStatus, addLeadNote, assignAgent, createVisit } from "@/app/(admin)/crm/actions";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -128,38 +128,77 @@ function AgentSelector({ leadId, currentAgentId, profiles, isAdmin, currentUserI
   );
 }
 
-/* ── Notes Editor ──────────────────────────────────────────────────────────── */
-function NotesEditor({ leadId, initial, disabled }: { leadId: string; initial: string; disabled: boolean }) {
-  const [notes, setNotes] = useState(initial);
-  const [saved, setSaved] = useState(false);
-  const [isPending, startTransition] = useTransition();
+/* ── Notes Section ─────────────────────────────────────────────────────────── */
+function NotesSection({ leadId, disabled }: { leadId: string; disabled: boolean }) {
+  const [notes, setNotes] = useState<LeadNote[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [text, setText] = useState("");
+  const [saving, setSaving] = useState(false);
 
-  function handleSave() {
-    startTransition(async () => {
-      await updateLeadNotes(leadId, notes);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
-    });
-  }
+  useEffect(() => {
+    const supabase = createClient();
+    supabase
+      .from("lead_notes")
+      .select("*")
+      .eq("lead_id", leadId)
+      .order("created_at", { ascending: false })
+      .then(({ data }) => { setNotes((data ?? []) as LeadNote[]); setLoading(false); });
+  }, [leadId]);
 
-  if (disabled) {
-    return (
-      <div className="w-full min-h-[80px] px-3 py-2 text-sm rounded-lg border border-border bg-border/20 text-muted-foreground">
-        {initial || <span className="italic">Sin notas</span>}
-      </div>
-    );
+  async function handleAdd() {
+    if (!text.trim()) return;
+    setSaving(true);
+    try {
+      const newNote = await addLeadNote(leadId, text.trim()) as LeadNote;
+      setNotes((prev) => [newNote, ...prev]);
+      setText("");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
-    <div className="space-y-2">
-      <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={4}
-        placeholder="Añadir notas..." disabled={disabled}
-        className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-surface resize-none focus:outline-none focus:ring-1 focus:ring-primary/30" />
-      <button onClick={handleSave} disabled={isPending}
-        className={cn("w-full h-8 rounded-lg text-xs font-semibold transition-colors",
-          saved ? "bg-green-500/10 text-green-600" : "bg-primary text-white hover:bg-primary-hover disabled:opacity-60")}>
-        {saved ? "✓ Guardado" : isPending ? "Guardando..." : "Guardar notas"}
-      </button>
+    <div className="space-y-3">
+      {!disabled && (
+        <div className="space-y-2">
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            rows={3}
+            placeholder="Escribe una nota..."
+            className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-surface resize-none focus:outline-none focus:ring-1 focus:ring-primary/30"
+          />
+          <button
+            onClick={handleAdd}
+            disabled={saving || !text.trim()}
+            className="w-full h-8 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary-hover transition-colors disabled:opacity-60"
+          >
+            {saving ? "Guardando..." : "Añadir nota"}
+          </button>
+        </div>
+      )}
+
+      {loading ? (
+        <p className="text-xs text-muted-foreground">Cargando...</p>
+      ) : notes.length === 0 ? (
+        <p className="text-xs text-muted-foreground">Sin notas</p>
+      ) : (
+        <div className="space-y-2.5 max-h-48 overflow-y-auto pr-1">
+          {notes.map((note) => (
+            <div key={note.id} className="border-l-2 border-border pl-3 py-0.5">
+              <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{note.content}</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">
+                {note.author_name} · {new Date(note.created_at).toLocaleDateString("es-ES", {
+                  day: "numeric", month: "short", year: "numeric",
+                })}{" "}
+                {new Date(note.created_at).toLocaleTimeString("es-ES", {
+                  hour: "2-digit", minute: "2-digit",
+                })}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -320,7 +359,7 @@ export function LeadEditModal({ lead, profiles, isAdmin, currentUserId, onClose,
                   <StickyNote className="w-3.5 h-3.5 text-muted-foreground" />
                   <span className="text-xs font-semibold text-foreground uppercase tracking-wide">Notas</span>
                 </div>
-                <NotesEditor leadId={currentLead.id} initial={currentLead.notes ?? ""} disabled={!canEdit} />
+                <NotesSection leadId={currentLead.id} disabled={!canEdit} />
               </div>
 
               <div>

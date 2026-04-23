@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LEAD_STATUS_CONFIG } from "@/types";
-import type { Lead, LeadStatus, Visit } from "@/types";
-import { updateLeadStatus, updateLeadNotes, assignAgent, createVisit } from "@/app/(admin)/crm/actions";
+import type { Lead, LeadNote, LeadStatus, Visit } from "@/types";
+import { updateLeadStatus, addLeadNote, assignAgent, createVisit } from "@/app/(admin)/crm/actions";
 import { cn } from "@/lib/utils";
 import {
   ChevronLeft,
@@ -190,49 +190,72 @@ function AgentSelector({
   );
 }
 
-/* ── Notes Editor ──────────────────────────────────────────────────────────── */
-function NotesEditor({ leadId, initial, disabled }: { leadId: string; initial: string; disabled?: boolean }) {
-  const [notes, setNotes] = useState(initial);
-  const [saved, setSaved] = useState(false);
-  const [isPending, startTransition] = useTransition();
+/* ── Notes Section ─────────────────────────────────────────────────────────── */
+function NotesSection({
+  leadId,
+  initialNotes,
+  disabled,
+}: {
+  leadId: string;
+  initialNotes: LeadNote[];
+  disabled?: boolean;
+}) {
+  const [notes, setNotes] = useState<LeadNote[]>(initialNotes);
+  const [text, setText] = useState("");
+  const [saving, setSaving] = useState(false);
 
-  function handleSave() {
-    startTransition(async () => {
-      await updateLeadNotes(leadId, notes);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
-    });
-  }
-
-  if (disabled) {
-    return (
-      <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-        {initial || "Sin notas"}
-      </p>
-    );
+  async function handleAdd() {
+    if (!text.trim()) return;
+    setSaving(true);
+    try {
+      const newNote = await addLeadNote(leadId, text.trim()) as LeadNote;
+      setNotes((prev) => [newNote, ...prev]);
+      setText("");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
-    <div className="space-y-2">
-      <textarea
-        value={notes}
-        onChange={(e) => setNotes(e.target.value)}
-        rows={5}
-        placeholder="Añadir notas sobre este lead..."
-        className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-surface resize-none focus:outline-none focus:ring-1 focus:ring-primary/30"
-      />
-      <button
-        onClick={handleSave}
-        disabled={isPending}
-        className={cn(
-          "w-full h-8 rounded-lg text-xs font-semibold transition-colors",
-          saved
-            ? "bg-green-500/10 text-green-600"
-            : "bg-primary text-white hover:bg-primary-hover disabled:opacity-60"
-        )}
-      >
-        {saved ? "✓ Guardado" : isPending ? "Guardando..." : "Guardar notas"}
-      </button>
+    <div className="space-y-4">
+      {!disabled && (
+        <div className="space-y-2">
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            rows={3}
+            placeholder="Escribe una nota..."
+            className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-surface resize-none focus:outline-none focus:ring-1 focus:ring-primary/30"
+          />
+          <button
+            onClick={handleAdd}
+            disabled={saving || !text.trim()}
+            className="w-full h-8 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary-hover transition-colors disabled:opacity-60"
+          >
+            {saving ? "Guardando..." : "Añadir nota"}
+          </button>
+        </div>
+      )}
+
+      {notes.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Sin notas</p>
+      ) : (
+        <div className="space-y-3">
+          {notes.map((note) => (
+            <div key={note.id} className="border-l-2 border-border pl-3 py-0.5">
+              <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{note.content}</p>
+              <p className="text-[10px] text-muted-foreground mt-1">
+                {note.author_name} · {new Date(note.created_at).toLocaleDateString("es-ES", {
+                  day: "numeric", month: "short", year: "numeric",
+                })}{" "}
+                {new Date(note.created_at).toLocaleTimeString("es-ES", {
+                  hour: "2-digit", minute: "2-digit",
+                })}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -481,12 +504,13 @@ function VisitsList({ visits, profiles }: { visits: Visit[]; profiles: { id: str
 interface LeadDetailProps {
   lead: Lead;
   visits: Visit[];
+  notes: LeadNote[];
   profiles: { id: string; full_name: string }[];
   isAdmin: boolean;
   currentUserId: string;
 }
 
-export function LeadDetail({ lead, visits, profiles, isAdmin, currentUserId }: LeadDetailProps) {
+export function LeadDetail({ lead, visits, notes, profiles, isAdmin, currentUserId }: LeadDetailProps) {
   const canEdit = isAdmin || lead.assigned_agent === currentUserId;
   const messages = (lead.whatsapp_conversation ?? []) as WaMessage[];
 
@@ -560,7 +584,7 @@ export function LeadDetail({ lead, visits, profiles, isAdmin, currentUserId }: L
               <h2 className="text-sm font-semibold text-foreground">Notas</h2>
               {!canEdit && <Lock className="w-3 h-3 text-muted-foreground ml-auto" />}
             </div>
-            <NotesEditor leadId={lead.id} initial={lead.notes ?? ""} disabled={!canEdit} />
+            <NotesSection leadId={lead.id} initialNotes={notes} disabled={!canEdit} />
           </div>
 
           {/* WhatsApp conversation */}

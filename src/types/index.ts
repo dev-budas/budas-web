@@ -113,6 +113,17 @@ interface WebhookChange {
   field: string;
 }
 
+/* ─── Lead Notes ─────────────────────────────────────────────────────────── */
+
+export interface LeadNote {
+  id: string;
+  lead_id: string;
+  content: string;
+  author_id: string | null;
+  author_name: string;
+  created_at: string;
+}
+
 /* ─── Visits ─────────────────────────────────────────────────────────────── */
 
 export type VisitStatus = "pending" | "confirmed" | "completed" | "cancelled";

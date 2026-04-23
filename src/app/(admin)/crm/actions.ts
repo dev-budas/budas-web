@@ -51,14 +51,21 @@ export async function updateLeadStatus(leadId: string, status: LeadStatus) {
   revalidatePath(`/crm/leads/${leadId}`);
 }
 
-export async function updateLeadNotes(leadId: string, notes: string) {
-  const { supabase } = await requireEditAccess(leadId);
-  const { error } = await supabase
-    .from("leads")
-    .update({ notes, updated_at: new Date().toISOString() })
-    .eq("id", leadId);
+export async function addLeadNote(leadId: string, content: string) {
+  const { supabase, user, profile } = await requireEditAccess(leadId);
+  const { data, error } = await supabase
+    .from("lead_notes")
+    .insert({
+      lead_id: leadId,
+      content,
+      author_id: user.id,
+      author_name: profile?.full_name ?? "Usuario",
+    })
+    .select()
+    .single();
   if (error) throw error;
   revalidatePath(`/crm/leads/${leadId}`);
+  return data;
 }
 
 export async function assignAgent(leadId: string, agentId: string | null) {
