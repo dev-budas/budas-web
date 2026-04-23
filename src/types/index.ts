@@ -111,6 +111,21 @@ interface WebhookChange {
   field: string;
 }
 
+/* ─── Visits ─────────────────────────────────────────────────────────────── */
+
+export type VisitStatus = "pending" | "confirmed" | "completed" | "cancelled";
+
+export interface Visit {
+  id: string;
+  lead_id: string;
+  agent_id?: string;
+  scheduled_at: string;
+  address?: string;
+  notes?: string;
+  status: VisitStatus;
+  created_at: string;
+}
+
 /* ─── CRM ────────────────────────────────────────────────────────────────── */
 
 export interface PipelineColumn {
