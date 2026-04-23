@@ -17,6 +17,7 @@ const leadSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
+    console.log("[API /leads] SUPABASE_URL:", process.env.NEXT_PUBLIC_SUPABASE_URL?.slice(0, 40));
     const body = await req.json();
     const parsed = leadSchema.safeParse(body);
 
