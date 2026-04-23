@@ -59,7 +59,12 @@ export async function updateLeadStatus(leadId: string, status: LeadStatus) {
       .single();
     if (lead) {
       const fn = status === "calificado" ? sendQualifiedLeadEmail : sendUnqualifiedLeadEmail;
-      fn(lead).catch((e) => console.error("[Email]", e));
+      try {
+        await fn(lead);
+        console.log(`[Email] sent for status=${status} lead=${leadId}`);
+      } catch (e) {
+        console.error("[Email] failed:", e);
+      }
     }
   }
 }

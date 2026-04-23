@@ -112,10 +112,15 @@ async function handleIncomingMessage(phone: string, text: string) {
 
     // Notify team by email
     const emailLead = { id: lead.id, name: lead.name, phone: lead.phone, property_city: lead.property_city, property_type: lead.property_type };
-    if (result.qualified) {
-      await sendQualifiedLeadEmail(emailLead).catch((e) => console.error("[Email] qualified:", e));
-    } else {
-      await sendUnqualifiedLeadEmail(emailLead).catch((e) => console.error("[Email] unqualified:", e));
+    try {
+      if (result.qualified) {
+        await sendQualifiedLeadEmail(emailLead);
+      } else {
+        await sendUnqualifiedLeadEmail(emailLead);
+      }
+      console.log(`[Email] sent for bot qualification lead=${lead.id} qualified=${result.qualified}`);
+    } catch (e) {
+      console.error("[Email] failed:", e);
     }
   }
 }
