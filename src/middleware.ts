@@ -25,20 +25,16 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  const { data: { user } } = await supabase.auth.getUser();
   const { pathname } = request.nextUrl;
 
-  // Allow login page through
-  if (pathname === "/crm/login") {
-    // Redirect to CRM if already logged in
-    if (user) {
-      return NextResponse.redirect(new URL("/crm", request.url));
-    }
+  // Login page — no auth check needed
+  if (pathname.startsWith("/crm/login")) {
     return supabaseResponse;
   }
 
-  // Protect all /crm routes
-  if (pathname.startsWith("/crm") && !user) {
+  // Protect all other /crm routes
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
     return NextResponse.redirect(new URL("/crm/login", request.url));
   }
 
