@@ -9,7 +9,7 @@ interface LogoProps {
 const sizes = {
   sm: { main: "text-[22px]", sub: "text-[7px]", mt: "mt-[1px]" },
   md: { main: "text-[30px]", sub: "text-[9px]",  mt: "mt-[2px]" },
-  lg: { main: "text-[52px]", sub: "text-[12px]", mt: "mt-[3px]" },
+  lg: { main: "text-[80px]", sub: "text-[16px]", mt: "mt-[4px]" },
 };
 
 export function Logo({ variant = "light", className, size = "md" }: LogoProps) {
