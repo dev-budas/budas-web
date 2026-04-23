@@ -15,6 +15,7 @@ import { LEAD_STATUS_CONFIG } from "@/types";
 import type { Lead, LeadStatus } from "@/types";
 import { updateLeadStatus } from "@/app/(admin)/crm/actions";
 import { cn } from "@/lib/utils";
+import { ExternalLink } from "lucide-react";
 
 /* ── Lead Card ─────────────────────────────────────────────────────────── */
 function LeadCard({ lead, isDragging = false }: { lead: Lead; isDragging?: boolean }) {
@@ -28,30 +29,43 @@ function LeadCard({ lead, isDragging = false }: { lead: Lead; isDragging?: boole
     <div
       ref={setNodeRef}
       style={style}
-      {...listeners}
       {...attributes}
       className={cn(
-        "bg-surface border border-border rounded-xl p-3.5 cursor-grab active:cursor-grabbing select-none transition-shadow",
+        "bg-surface border border-border rounded-xl p-3.5 select-none transition-shadow",
         isDragging ? "opacity-0" : "hover:shadow-md hover:border-primary/20"
       )}
     >
       <div className="flex items-start justify-between gap-2 mb-2">
-        <div className="flex items-center gap-2.5 min-w-0">
+        {/* Drag handle */}
+        <div
+          {...listeners}
+          className="flex items-center gap-2.5 min-w-0 flex-1 cursor-grab active:cursor-grabbing"
+        >
           <div className="w-7 h-7 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
             <span className="text-[10px] font-bold text-primary">{lead.name.charAt(0).toUpperCase()}</span>
           </div>
           <p className="text-sm font-semibold text-foreground truncate">{lead.name}</p>
         </div>
+        {/* Edit link — no drag listeners */}
+        <a
+          href={`/crm/leads/${lead.id}`}
+          className="flex-shrink-0 p-1 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/8 transition-colors"
+          title="Ver detalle"
+        >
+          <ExternalLink className="w-3.5 h-3.5" />
+        </a>
       </div>
-      <p className="text-xs text-muted-foreground truncate mb-1">
-        {lead.property_city ?? "—"} · {lead.property_type?.replace("_", " ") ?? "—"}
-      </p>
-      <p className="text-xs text-muted-foreground">{lead.phone}</p>
-      {lead.assigned_agent && (
-        <div className="mt-2 pt-2 border-t border-border">
-          <p className="text-[10px] text-muted-foreground">Asignado</p>
-        </div>
-      )}
+      <div {...listeners} className="cursor-grab active:cursor-grabbing">
+        <p className="text-xs text-muted-foreground truncate mb-1">
+          {lead.property_city ?? "—"} · {lead.property_type?.replace("_", " ") ?? "—"}
+        </p>
+        <p className="text-xs text-muted-foreground">{lead.phone}</p>
+        {lead.assigned_agent && (
+          <div className="mt-2 pt-2 border-t border-border">
+            <p className="text-[10px] text-muted-foreground">Asignado</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
