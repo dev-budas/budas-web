@@ -17,7 +17,6 @@ const leadSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
-    console.error("[DEBUG] SUPABASE_URL:", process.env.NEXT_PUBLIC_SUPABASE_URL?.slice(0, 50) ?? "UNDEFINED");
     const body = await req.json();
     const parsed = leadSchema.safeParse(body);
 
@@ -46,7 +45,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error("[API /leads] Error:", err);
     return NextResponse.json(
-      { message: "Error interno del servidor", debug: { url: process.env.NEXT_PUBLIC_SUPABASE_URL?.slice(0, 50) ?? "UNDEFINED", err: String(err) } },
+      { message: "Error interno del servidor" },
       { status: 500 }
     );
   }
