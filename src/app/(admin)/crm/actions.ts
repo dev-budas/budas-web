@@ -2,12 +2,15 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import type { LeadStatus } from "@/types";
 
 async function getSession() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  // Auth check via session client, writes via service client (bypasses RLS)
+  const authClient = await createClient();
+  const { data: { user } } = await authClient.auth.getUser();
   if (!user) throw new Error("No autenticado");
+  const supabase = createServiceClient();
   const { data: profile } = await supabase
     .from("profiles")
     .select("role, full_name")
