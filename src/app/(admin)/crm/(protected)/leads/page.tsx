@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { LEAD_STATUS_CONFIG } from "@/types";
 import type { Lead } from "@/types";
 import { Search } from "lucide-react";
@@ -9,17 +10,25 @@ export default async function LeadsPage({
   searchParams: Promise<{ status?: string; q?: string }>;
 }) {
   const supabase = await createClient();
+  const service = createServiceClient();
   const { status, q } = await searchParams;
 
-  let query = supabase
+  let query = service
     .from("leads")
     .select("*")
     .order("created_at", { ascending: false });
 
   if (status) query = query.eq("status", status);
 
-  const { data } = await query;
+  const [{ data }, { data: profilesData }] = await Promise.all([
+    query,
+    service.from("profiles").select("id, full_name"),
+  ]);
+
   const leads = (data ?? []) as Lead[];
+  const profileMap = Object.fromEntries(
+    ((profilesData ?? []) as { id: string; full_name: string }[]).map((p) => [p.id, p.full_name])
+  );
 
   const filtered = q
     ? leads.filter(
@@ -139,7 +148,7 @@ export default async function LeadsPage({
                       </td>
                       <td className="px-5 py-4 hidden lg:table-cell text-xs text-muted-foreground">
                         <a href={`/crm/leads/${lead.id}`} className="block">
-                          {lead.assigned_agent ?? "Sin asignar"}
+                          {lead.assigned_agent ? (profileMap[lead.assigned_agent] ?? "—") : "Sin asignar"}
                         </a>
                       </td>
                       <td className="px-5 py-4 hidden sm:table-cell text-xs text-muted-foreground">
