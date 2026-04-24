@@ -6,7 +6,7 @@ function getResend() {
 }
 
 const FROM = process.env.RESEND_FROM_EMAIL ?? "notificaciones@budasdelmediterraneo.com";
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://crm.budasdelmediterraneo.com";
+const APP_URL = process.env.APP_URL ?? "https://lp1.budasdelmediterraneo.com";
 
 async function getTeamEmails(): Promise<string[]> {
   const supabase = createServiceClient();
