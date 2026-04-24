@@ -560,6 +560,7 @@ export function LeadDetail({ lead, visits, notes, profiles, isAdmin, currentUser
             <div className="grid grid-cols-2 gap-4">
               <InfoRow label="Email" value={lead.email ?? "—"} />
               <InfoRow label="Ciudad" value={lead.property_city ?? "—"} />
+              <InfoRow label="Dirección" value={lead.property_address ?? "—"} />
               <InfoRow label="Tipo de propiedad" value={lead.property_type?.replace("_", " ") ?? "—"} />
               <InfoRow label="Habitaciones" value={lead.rooms != null ? String(lead.rooms) : "—"} />
               <InfoRow label="Baños" value={lead.bathrooms != null ? String(lead.bathrooms) : "—"} />

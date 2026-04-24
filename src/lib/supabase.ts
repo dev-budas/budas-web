@@ -26,6 +26,7 @@ export function createServerClient() {
 
 export async function createLead(
   data: Pick<Lead, "name" | "phone" | "email" | "property_type" | "property_city"> & {
+    property_address?: string;
     rooms?: number;
     bathrooms?: number;
     utm_source?: string;

@@ -10,6 +10,7 @@ const leadSchema = z.object({
   email: z.string().email().optional().or(z.literal("")),
   property_type: z.enum(["piso", "casa", "chalet", "local_comercial", "terreno", "otro"]),
   property_city: z.string().min(2),
+  property_address: z.string().min(3).optional(),
   rooms: z.coerce.number().int().min(1).max(20).optional(),
   bathrooms: z.coerce.number().int().min(1).max(10).optional(),
   utm_source: z.string().optional(),

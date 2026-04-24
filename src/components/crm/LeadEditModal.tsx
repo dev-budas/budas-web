@@ -347,6 +347,7 @@ export function LeadEditModal({ lead, profiles, isAdmin, currentUserId, onClose,
             <div className="p-5 space-y-5">
               <div className="grid grid-cols-2 gap-3">
                 <InfoItem label="Ciudad" value={currentLead.property_city ?? "—"} />
+                <InfoItem label="Dirección" value={currentLead.property_address ?? "—"} />
                 <InfoItem label="Tipo" value={currentLead.property_type?.replace("_", " ") ?? "—"} />
                 <InfoItem label="Habitaciones" value={currentLead.rooms != null ? String(currentLead.rooms) : "—"} />
                 <InfoItem label="Baños" value={currentLead.bathrooms != null ? String(currentLead.bathrooms) : "—"} />

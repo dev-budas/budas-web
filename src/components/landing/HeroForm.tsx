@@ -26,6 +26,7 @@ const schema = z.object({
   phone:         z.string().min(9, "Teléfono inválido").regex(/^[+\d\s()-]{9,}$/, "Formato inválido"),
   email:         z.string().email("Email inválido").optional().or(z.literal("")),
   property_city: z.string().min(2, "Indica la ciudad o zona"),
+  property_address: z.string().min(3, "Indica la dirección").optional().or(z.literal("")),
   property_type: z.enum(["piso","casa","chalet","local_comercial","terreno","otro"], {
     error: "Selecciona el tipo",
   }),
@@ -93,6 +94,7 @@ export function HeroForm() {
           phone:         data.phone,
           email:         data.email || undefined,
           property_city: data.property_city,
+          property_address: data.property_address || undefined,
           property_type: data.property_type,
           rooms:         isResidential && data.rooms ? Number(data.rooms) : undefined,
           bathrooms:     isResidential && data.bathrooms ? Number(data.bathrooms) : undefined,
@@ -142,6 +144,11 @@ export function HeroForm() {
       {/* City */}
       <Field label="Ciudad o zona" icon={MapPin} error={errors.property_city?.message}>
         <input className={inputCls} placeholder="Barcelona, Sitges, Tarragona..." {...register("property_city")} />
+      </Field>
+
+      {/* Address */}
+      <Field label="Dirección de la propiedad" icon={MapPin} error={errors.property_address?.message}>
+        <input className={inputCls} placeholder="Calle Mayor 12, 3º 2ª..." {...register("property_address")} />
       </Field>
 
       {/* Property type */}
