@@ -58,7 +58,7 @@ async function sendWhatsAppBotIntro(leadId: string, phone: string, name: string)
   await sendWhatsAppMessage(phone, {
     type: "text",
     text: {
-      body: `¡Hola ${firstName}! 👋 Soy Mediterra, del equipo de *Budas del Mediterráneo*.\n\nAcabo de recibir tu solicitud de valoración. ¿Tienes un momento para contarme un poco más sobre tu propiedad?`,
+      body: `¡Hola ${firstName}! 👋 Soy Silvina, del equipo comercial de *Budas del Mediterráneo*.\n\nAcabo de recibir tu solicitud de valoración. ¿Tienes un momento para contarme un poco más sobre la propiedad?`,
     },
   });
 

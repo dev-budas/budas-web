@@ -1,32 +1,23 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { readFileSync } from "fs";
+import { join } from "path";
 import type { Lead } from "@/types";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!,
 });
 
-const SYSTEM_PROMPT = `Eres Mediterra, asistente virtual de Budas del Mediterráneo, una inmobiliaria especializada en la costa mediterránea española.
+const ACTIVE_AGENT = process.env.ACTIVE_AGENT ?? "silvina";
 
-Tu objetivo es entender si el contacto tiene un genuino interés en vender su propiedad. Debes conseguir, de forma natural y conversacional, la siguiente información:
+function loadAgentPrompt(): string {
+  try {
+    return readFileSync(join(process.cwd(), "agents", `${ACTIVE_AGENT}.md`), "utf-8");
+  } catch {
+    throw new Error(`No se encontró el archivo de agente: agents/${ACTIVE_AGENT}.md`);
+  }
+}
 
-1. Si es el propietario del inmueble
-2. Tipo de propiedad y ubicación exacta (ciudad/barrio)
-3. Motivación para vender (urgencia económica, cambio de vida, inversión)
-4. Plazo en el que piensa vender (inmediato, 3 meses, 6 meses, sin prisa)
-5. Si hay hipoteca pendiente
-
-INSTRUCCIONES DE CONVERSACIÓN:
-- Habla en español, con tono cálido y cercano. Como un profesional de confianza, no como un bot.
-- No hagas todas las preguntas a la vez. Ve de forma natural, una o dos por mensaje.
-- Si la persona da información extra, úsala para personalizar la conversación.
-- Si detectas que NO hay intención real de venta, cierra la conversación educadamente.
-- Máximo 8-10 turnos de conversación antes de concluir.
-- Usa emojis con moderación y solo cuando sean naturales.
-
-CUANDO HAYAS RECOPILADO SUFICIENTE INFORMACIÓN:
-- Usa la herramienta qualify_lead para registrar el resultado.
-- Si el lead es válido, dile que un agente especializado se pondrá en contacto para la valoración presencial.
-- Si no es válido, cierra con amabilidad.`;
+const SYSTEM_PROMPT = loadAgentPrompt();
 
 const tools: Anthropic.Tool[] = [
   {
