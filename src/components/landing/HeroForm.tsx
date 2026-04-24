@@ -170,7 +170,7 @@ export function HeroForm() {
 
           <Field label="Tipo de propiedad" icon={Home} error={errors.property_type?.message}>
             <div className="relative">
-              <select className={selectCls} {...register("property_type")} style={{ colorScheme: "dark" }}>
+              <select defaultValue="" className={selectCls} {...register("property_type")} style={{ colorScheme: "dark" }}>
                 <option value="" disabled className="bg-section-dark">Selecciona el tipo</option>
                 {PROPERTY_TYPES.map(({ value, label }) => (
                   <option key={value} value={value} className="bg-section-dark text-white">{label}</option>
