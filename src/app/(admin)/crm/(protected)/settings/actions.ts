@@ -3,6 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createServerClient } from "@/lib/supabase";
+import { createServiceClient } from "@/lib/supabase/service";
+import type { RolePermissions, PermissionKey, UserPermissionsOverride } from "@/lib/permissions";
+import { PERMISSION_DEFS } from "@/lib/permissions";
 
 export async function updateProfile(formData: FormData) {
   const full_name = (formData.get("full_name") as string)?.trim();
@@ -79,6 +82,79 @@ export async function deleteTeamUser(targetUserId: string) {
   const admin = createServerClient();
   const { error } = await admin.auth.admin.deleteUser(targetUserId);
   if (error) return { error: error.message };
+
+  revalidatePath("/crm/settings");
+  return { success: true };
+}
+
+async function requireAdmin() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "No autenticado" as const };
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (profile?.role !== "admin") return { error: "Solo el admin puede modificar permisos" as const };
+  return { user, error: null };
+}
+
+export async function updateRolePermissions(
+  role: "admin" | "agent",
+  permissions: Partial<RolePermissions>
+) {
+  const { error: authError } = await requireAdmin();
+  if (authError) return { error: authError };
+
+  // Admin permissions cannot be changed
+  if (role === "admin") return { error: "Los permisos de Admin no se pueden modificar" };
+
+  const service = createServiceClient();
+  const { error } = await service
+    .from("role_permissions")
+    .update({
+      see_all_leads:   permissions.see_all_leads,
+      reassign_leads:  permissions.reassign_leads,
+      delete_leads:    permissions.delete_leads,
+      view_stats:      permissions.view_stats,
+      manage_pipeline: permissions.manage_pipeline,
+      updated_at:      new Date().toISOString(),
+    })
+    .eq("role", role);
+
+  if (error) return { error: error.message };
+  revalidatePath("/crm/settings");
+  revalidatePath("/crm");
+  return { success: true };
+}
+
+export async function updateUserPermissions(
+  targetUserId: string,
+  overrides: Record<PermissionKey, boolean | null>
+) {
+  const { error: authError } = await requireAdmin();
+  if (authError) return { error: authError };
+
+  const service = createServiceClient();
+  const allNull = PERMISSION_DEFS.every(({ key }) => overrides[key] === null);
+
+  if (allNull) {
+    // Remove the override row entirely — user inherits everything from role
+    await service.from("user_permissions").delete().eq("user_id", targetUserId);
+  } else {
+    await service.from("user_permissions").upsert({
+      user_id:         targetUserId,
+      see_all_leads:   overrides.see_all_leads,
+      reassign_leads:  overrides.reassign_leads,
+      delete_leads:    overrides.delete_leads,
+      view_stats:      overrides.view_stats,
+      manage_pipeline: overrides.manage_pipeline,
+      updated_at:      new Date().toISOString(),
+    });
+  }
 
   revalidatePath("/crm/settings");
   return { success: true };

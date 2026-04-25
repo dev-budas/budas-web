@@ -1,8 +1,11 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { ProfileForm } from "@/components/crm/ProfileForm";
 import { TeamPanel } from "@/components/crm/TeamPanel";
+import { PermissionsMatrix } from "@/components/crm/PermissionsMatrix";
 import { User } from "lucide-react";
+import type { RolePermissions, UserPermissionsOverride } from "@/lib/permissions";
 
 export const dynamic = "force-dynamic";
 
@@ -11,12 +14,27 @@ export default async function SettingsPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/crm/login");
 
-  const [{ data: profile }, { data: team }] = await Promise.all([
+  const service = createServiceClient();
+
+  const [
+    { data: profile },
+    { data: team },
+    { data: agentRolePerms },
+    { data: userPermsRows },
+  ] = await Promise.all([
     supabase.from("profiles").select("full_name, role").eq("id", user.id).single(),
-    supabase.from("profiles").select("id, full_name, role").order("full_name"),
+    service.from("profiles").select("id, full_name, role").order("full_name"),
+    service.from("role_permissions").select("*").eq("role", "agent").single(),
+    service.from("user_permissions").select("*"),
   ]);
 
   const isAdmin = profile?.role === "admin";
+
+  // Build a map of userId → overrides for quick lookup in TeamPanel
+  const userPermissionsMap: Record<string, UserPermissionsOverride> = {};
+  for (const row of (userPermsRows ?? [])) {
+    userPermissionsMap[row.user_id] = row as UserPermissionsOverride;
+  }
 
   return (
     <div className="p-6 lg:p-8 max-w-3xl mx-auto">
@@ -43,11 +61,18 @@ export default async function SettingsPage() {
           <ProfileForm currentName={profile?.full_name ?? ""} />
         </div>
 
+        {/* Permissions matrix — admin only */}
+        {isAdmin && agentRolePerms && (
+          <PermissionsMatrix agentPermissions={agentRolePerms as RolePermissions} />
+        )}
+
         {/* Team — admin only */}
         {isAdmin && (
           <TeamPanel
             currentUserId={user.id}
             team={(team ?? []) as { id: string; full_name: string; role: string }[]}
+            agentRolePermissions={agentRolePerms as RolePermissions}
+            userPermissionsMap={userPermissionsMap}
           />
         )}
       </div>

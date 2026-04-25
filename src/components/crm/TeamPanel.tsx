@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Shield, UserPlus, Trash2 } from "lucide-react";
+import { Shield, UserPlus, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { deleteTeamUser } from "@/app/(admin)/crm/(protected)/settings/actions";
 import { CreateUserModal } from "./CreateUserModal";
+import { UserPermissionsRow } from "./UserPermissionsRow";
+import type { RolePermissions, UserPermissionsOverride } from "@/lib/permissions";
 
 interface Member {
   id: string;
@@ -11,20 +13,26 @@ interface Member {
   role: string;
 }
 
+interface Props {
+  currentUserId: string;
+  team: Member[];
+  agentRolePermissions: RolePermissions | null;
+  userPermissionsMap: Record<string, UserPermissionsOverride>;
+}
+
 export function TeamPanel({
   currentUserId,
   team: initialTeam,
-}: {
-  currentUserId: string;
-  team: Member[];
-}) {
+  agentRolePermissions,
+  userPermissionsMap,
+}: Props) {
   const [team, setTeam] = useState(initialTeam);
   const [showCreate, setShowCreate] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   function handleCreated() {
-    // Reload page to refresh team list
     window.location.reload();
   }
 
@@ -37,10 +45,25 @@ export function TeamPanel({
         alert(result.error);
       } else {
         setTeam((prev) => prev.filter((m) => m.id !== memberId));
+        if (expandedId === memberId) setExpandedId(null);
       }
       setDeletingId(null);
     });
   }
+
+  function toggleExpand(memberId: string) {
+    setExpandedId((prev) => (prev === memberId ? null : memberId));
+  }
+
+  // Default role permissions fallback for display purposes
+  const defaultRolePerms: RolePermissions = agentRolePermissions ?? {
+    role: "agent",
+    see_all_leads: true,
+    reassign_leads: false,
+    delete_leads: false,
+    view_stats: true,
+    manage_pipeline: false,
+  };
 
   return (
     <>
@@ -51,7 +74,9 @@ export function TeamPanel({
           </div>
           <div>
             <h2 className="text-sm font-semibold text-foreground">Equipo</h2>
-            <p className="text-xs text-muted-foreground">{team.length} miembro{team.length !== 1 ? "s" : ""}</p>
+            <p className="text-xs text-muted-foreground">
+              {team.length} miembro{team.length !== 1 ? "s" : ""}
+            </p>
           </div>
           <button
             onClick={() => setShowCreate(true)}
@@ -63,31 +88,68 @@ export function TeamPanel({
         </div>
 
         <div className="divide-y divide-border">
-          {team.map((member) => (
-            <div key={member.id} className="flex items-center gap-3 py-3">
-              <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
-                <span className="text-xs font-bold text-primary">
-                  {member.full_name?.charAt(0).toUpperCase() ?? "?"}
-                </span>
+          {team.map((member) => {
+            const isExpanded = expandedId === member.id;
+            const isAgent = member.role === "agent";
+            const hasOverride = !!userPermissionsMap[member.id];
+
+            return (
+              <div key={member.id}>
+                {/* Member row */}
+                <div className="flex items-center gap-3 py-3">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
+                    <span className="text-xs font-bold text-primary">
+                      {member.full_name?.charAt(0).toUpperCase() ?? "?"}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground">{member.full_name ?? "—"}</p>
+                    {hasOverride && (
+                      <p className="text-[10px] text-accent font-medium">Permisos personalizados</p>
+                    )}
+                  </div>
+                  <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-border/60 text-muted-foreground capitalize">
+                    {member.role}
+                  </span>
+
+                  {/* Expand permissions — only for agents */}
+                  {isAgent && (
+                    <button
+                      onClick={() => toggleExpand(member.id)}
+                      className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
+                      title="Editar permisos individuales"
+                    >
+                      {isExpanded ? (
+                        <ChevronUp className="w-3.5 h-3.5" />
+                      ) : (
+                        <ChevronDown className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                  )}
+
+                  {member.id !== currentUserId && (
+                    <button
+                      onClick={() => handleDelete(member.id)}
+                      disabled={isPending && deletingId === member.id}
+                      className="p-1.5 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-40"
+                      title="Eliminar usuario"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Permissions expand panel */}
+                {isExpanded && isAgent && (
+                  <UserPermissionsRow
+                    userId={member.id}
+                    rolePermissions={defaultRolePerms}
+                    initialOverrides={userPermissionsMap[member.id] ?? null}
+                  />
+                )}
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground">{member.full_name ?? "—"}</p>
-              </div>
-              <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-border/60 text-muted-foreground capitalize">
-                {member.role}
-              </span>
-              {member.id !== currentUserId && (
-                <button
-                  onClick={() => handleDelete(member.id)}
-                  disabled={isPending && deletingId === member.id}
-                  className="p-1.5 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-40"
-                  title="Eliminar usuario"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 

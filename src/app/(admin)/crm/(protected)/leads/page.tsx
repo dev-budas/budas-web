@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { getEffectivePermissions } from "@/lib/permissions";
 import { LEAD_STATUS_CONFIG } from "@/types";
 import type { Lead } from "@/types";
 import { Search } from "lucide-react";
@@ -13,10 +14,24 @@ export default async function LeadsPage({
   const service = createServiceClient();
   const { status, q } = await searchParams;
 
+  const { data: { user } } = await supabase.auth.getUser();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user!.id)
+    .single();
+
+  const permissions = await getEffectivePermissions(user!.id, profile?.role ?? "agent");
+
   let query = service
     .from("leads")
     .select("*")
     .order("created_at", { ascending: false });
+
+  // Restrict to own leads if agent doesn't have see_all_leads
+  if (!permissions.see_all_leads) {
+    query = query.eq("assigned_agent", user!.id);
+  }
 
   if (status) query = query.eq("status", status);
 

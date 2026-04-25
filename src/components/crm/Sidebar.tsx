@@ -15,26 +15,34 @@ import {
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { Logo } from "@/components/shared/Logo";
+import type { ResolvedPermissions } from "@/lib/permissions";
 
-const navItems = [
-  { href: "/crm",              label: "Dashboard",     icon: LayoutDashboard, exact: true },
-  { href: "/crm/leads",        label: "Leads",         icon: Users },
-  { href: "/crm/pipeline",     label: "Pipeline",      icon: Kanban },
-  { href: "/crm/calendario",   label: "Calendario",    icon: Calendar },
-  { href: "/crm/conversaciones", label: "WhatsApp",    icon: MessageSquare },
-  { href: "/crm/estadisticas", label: "Estadísticas",  icon: BarChart3 },
-  { href: "/crm/settings",     label: "Configuración", icon: Settings },
+const allNavItems = [
+  { href: "/crm",                label: "Dashboard",     icon: LayoutDashboard, exact: true,  permission: null },
+  { href: "/crm/leads",          label: "Leads",         icon: Users,           exact: false, permission: null },
+  { href: "/crm/pipeline",       label: "Pipeline",      icon: Kanban,          exact: false, permission: null },
+  { href: "/crm/calendario",     label: "Calendario",    icon: Calendar,        exact: false, permission: null },
+  { href: "/crm/conversaciones", label: "WhatsApp",      icon: MessageSquare,   exact: false, permission: null },
+  { href: "/crm/estadisticas",   label: "Estadísticas",  icon: BarChart3,       exact: false, permission: "view_stats" as const },
+  { href: "/crm/settings",       label: "Configuración", icon: Settings,        exact: false, permission: null },
 ];
 
 interface CRMSidebarProps {
   userEmail?: string;
   userRole?: string;
   userName?: string;
+  permissions?: ResolvedPermissions;
 }
 
-export function CRMSidebar({ userEmail, userRole, userName }: CRMSidebarProps) {
+export function CRMSidebar({ userEmail, userRole, userName, permissions }: CRMSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+
+  const navItems = allNavItems.filter(({ permission }) => {
+    if (!permission) return true;
+    if (!permissions) return true; // show all if no permissions loaded yet
+    return permissions[permission];
+  });
 
   function isActive(href: string, exact?: boolean) {
     if (exact) return pathname === href;
