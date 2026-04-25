@@ -63,16 +63,28 @@ export interface BotResult {
   conversationEnded: boolean;
 }
 
+function sanitizeInput(raw: string): string {
+  return raw
+    .slice(0, 800)                    // cap length to ~200 tokens
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "") // strip control chars (keep \n \r \t)
+    .trim();
+}
+
 export async function processBotMessage(
   conversationHistory: Array<{ role: "user" | "assistant"; content: string }>,
   incomingMessage: string
 ): Promise<BotResult> {
+  const sanitized = sanitizeInput(incomingMessage);
+
+  // Keep last 20 messages to prevent token exhaustion
+  const recentHistory = conversationHistory.slice(-20);
+
   const messages: Anthropic.MessageParam[] = [
-    ...conversationHistory.map((m) => ({
+    ...recentHistory.map((m) => ({
       role: m.role,
       content: m.content,
     })),
-    { role: "user" as const, content: incomingMessage },
+    { role: "user" as const, content: sanitized },
   ];
 
   const response = await anthropic.messages.create({
