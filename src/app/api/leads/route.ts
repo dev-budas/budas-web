@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createLead } from "@/lib/supabase";
 import { sendWhatsAppMessage } from "@/lib/whatsapp";
 import { formatPhone } from "@/lib/utils";
+import { checkRateLimit } from "@/lib/ratelimit";
 
 const leadSchema = z.object({
   name: z.string().min(2),
@@ -19,6 +20,15 @@ const leadSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "unknown";
+  const { allowed, retryAfterSeconds } = checkRateLimit(ip);
+  if (!allowed) {
+    return NextResponse.json(
+      { message: "Demasiadas solicitudes. Inténtalo más tarde." },
+      { status: 429, headers: { "Retry-After": String(retryAfterSeconds) } }
+    );
+  }
+
   try {
     const body = await req.json();
     const parsed = leadSchema.safeParse(body);
