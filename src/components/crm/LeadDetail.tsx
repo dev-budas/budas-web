@@ -274,17 +274,19 @@ function VisitForm({
   leadId,
   profiles,
   currentAgentId,
+  propertyAddress,
   disabled,
 }: {
   leadId: string;
   profiles: { id: string; full_name: string }[];
   currentAgentId: string | null;
+  propertyAddress?: string;
   disabled?: boolean;
 }) {
   if (disabled) return null;
   const [open, setOpen] = useState(false);
   const [scheduledAt, setScheduledAt] = useState("");
-  const [address, setAddress] = useState("");
+  const [address, setAddress] = useState(propertyAddress ?? "");
   const [notes, setNotes] = useState("");
   const [agentId, setAgentId] = useState(currentAgentId ?? "");
   const [saving, setSaving] = useState(false);
@@ -845,6 +847,7 @@ export function LeadDetail({ lead, visits, notes, files, profiles, isAdmin, curr
                 leadId={lead.id}
                 profiles={profiles}
                 currentAgentId={lead.assigned_agent ?? null}
+                propertyAddress={lead.property_address}
                 disabled={!canEdit}
               />
             </div>

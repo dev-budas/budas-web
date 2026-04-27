@@ -167,11 +167,16 @@ export async function createVisit(data: {
     if (agentEmail) {
       const { data: lead } = await supabase
         .from("leads")
-        .select("id, name, phone, property_city, property_type")
+        .select("id, name, phone, property_city, property_type, property_address")
         .eq("id", data.lead_id)
         .single();
       if (lead) {
-        await sendVisitConfirmationEmail(visit, lead, agentEmail);
+        // Use visit address if provided, fall back to the lead's property address
+        const visitForEmail = {
+          ...visit,
+          address: visit.address ?? lead.property_address ?? null,
+        };
+        await sendVisitConfirmationEmail(visitForEmail, lead, agentEmail);
         console.log(`[Email] visit confirmation sent lead=${data.lead_id} agent=${user.id}`);
       }
     }
