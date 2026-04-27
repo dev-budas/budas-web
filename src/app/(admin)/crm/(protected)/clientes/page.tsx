@@ -4,13 +4,13 @@ import { getEffectivePermissions } from "@/lib/permissions";
 import { LEAD_STATUS_CONFIG } from "@/types";
 import type { Lead } from "@/types";
 import {
-  Phone,
   MapPin,
   Calendar,
   User,
   Search,
   Building2,
 } from "lucide-react";
+import NewLeadModal from "@/components/crm/NewLeadModal";
 
 export default async function ClientesPage({
   searchParams,
@@ -85,11 +85,14 @@ export default async function ClientesPage({
     <div className="p-6 lg:p-8 max-w-6xl mx-auto">
 
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground mb-1">Clientes</h1>
-        <p className="text-sm text-muted-foreground">
-          Propietarios con visita agendada o propiedad captada
-        </p>
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground mb-1">Clientes</h1>
+          <p className="text-sm text-muted-foreground">
+            Propietarios con visita agendada o propiedad captada
+          </p>
+        </div>
+        <NewLeadModal initialStatus="visita_agendada" buttonLabel="Nuevo cliente" />
       </div>
 
       {/* Stats pills */}

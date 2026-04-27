@@ -185,6 +185,53 @@ export async function createVisit(data: {
   }
 }
 
+export async function createManualLead(data: {
+  name: string;
+  phone: string;
+  email?: string;
+  property_city?: string;
+  property_address?: string;
+  property_type?: PropertyType;
+  rooms?: number;
+  bathrooms?: number;
+  estimated_value?: number;
+  status?: LeadStatus;
+  notes?: string;
+}) {
+  const { supabase } = await getSession();
+  const { name, phone, notes, status = "nuevo", ...rest } = data;
+
+  const { data: lead, error } = await supabase
+    .from("leads")
+    .insert({
+      name: name.trim(),
+      phone: phone.trim(),
+      status,
+      utm_source: "manual",
+      ...rest,
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  if (notes?.trim()) {
+    const { user: u, profile: p } = await getSession();
+    await supabase.from("lead_notes").insert({
+      lead_id: lead.id,
+      content: notes.trim(),
+      author_id: u.id,
+      author_name: p?.full_name ?? "Usuario",
+    });
+  }
+
+  revalidatePath("/crm/leads");
+  revalidatePath("/crm/clientes");
+  revalidatePath("/crm/pipeline");
+  revalidatePath("/crm");
+  return lead;
+}
+
 export async function updateLeadInfo(
   leadId: string,
   data: {

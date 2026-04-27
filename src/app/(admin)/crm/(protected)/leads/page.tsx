@@ -4,6 +4,7 @@ import { getEffectivePermissions } from "@/lib/permissions";
 import { LEAD_STATUS_CONFIG } from "@/types";
 import type { Lead } from "@/types";
 import { Search } from "lucide-react";
+import NewLeadModal from "@/components/crm/NewLeadModal";
 
 export default async function LeadsPage({
   searchParams,
@@ -60,9 +61,14 @@ export default async function LeadsPage({
     <div className="p-6 lg:p-8 max-w-6xl mx-auto">
 
       {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-foreground">Leads</h1>
-        <span className="text-sm text-muted-foreground">{filtered.length} resultado{filtered.length !== 1 ? "s" : ""}</span>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-muted-foreground hidden sm:inline">
+            {filtered.length} resultado{filtered.length !== 1 ? "s" : ""}
+          </span>
+          <NewLeadModal />
+        </div>
       </div>
 
       {/* Filters */}
