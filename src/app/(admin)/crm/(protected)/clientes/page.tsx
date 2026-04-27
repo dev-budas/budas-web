@@ -33,14 +33,14 @@ export default async function ClientesPage({
   let query = service
     .from("leads")
     .select("*")
-    .in("status", ["cliente", "captado"])
+    .in("status", ["visita_agendada", "cliente", "captado"])
     .order("updated_at", { ascending: false });
 
   if (!permissions.see_all_leads) {
     query = query.eq("assigned_agent", user!.id);
   }
 
-  if (status && (status === "cliente" || status === "captado")) {
+  if (status && ["visita_agendada", "cliente", "captado"].includes(status)) {
     query = query.eq("status", status);
   }
 
@@ -77,6 +77,7 @@ export default async function ClientesPage({
       )
     : leads;
 
+  const visitaCount = leads.filter((l) => l.status === "visita_agendada").length;
   const clienteCount = leads.filter((l) => l.status === "cliente").length;
   const captadoCount = leads.filter((l) => l.status === "captado").length;
 
@@ -93,6 +94,11 @@ export default async function ClientesPage({
 
       {/* Stats pills */}
       <div className="flex gap-3 mb-6 flex-wrap">
+        <div className="flex items-center gap-2 bg-surface border border-border rounded-lg px-4 py-2">
+          <span className="w-2 h-2 rounded-full bg-[#EC4899]" />
+          <span className="text-sm text-muted-foreground">Visita agendada</span>
+          <span className="text-sm font-semibold text-foreground">{visitaCount}</span>
+        </div>
         <div className="flex items-center gap-2 bg-surface border border-border rounded-lg px-4 py-2">
           <span className="w-2 h-2 rounded-full bg-[#059669]" />
           <span className="text-sm text-muted-foreground">Cliente</span>
@@ -133,7 +139,7 @@ export default async function ClientesPage({
           >
             Todos
           </a>
-          {(["cliente", "captado"] as const).map((s) => {
+          {(["visita_agendada", "cliente", "captado"] as const).map((s) => {
             const cfg = LEAD_STATUS_CONFIG[s];
             return (
               <a

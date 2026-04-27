@@ -150,7 +150,7 @@ export async function createVisit(data: {
 
   const { error: statusError } = await supabase
     .from("leads")
-    .update({ status: "cliente", updated_at: new Date().toISOString() })
+    .update({ status: "visita_agendada", updated_at: new Date().toISOString() })
     .eq("id", data.lead_id);
   if (statusError) throw statusError;
 
