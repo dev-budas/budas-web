@@ -591,6 +591,24 @@ export function LeadDetail({ lead, visits, notes, files, profiles, isAdmin, curr
                 })}
               />
             </div>
+
+            {lead.property_address && (
+              <div className="mt-5">
+                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide mb-2">Mapa</p>
+                <div className="rounded-xl overflow-hidden border border-border">
+                  <iframe
+                    src={`https://maps.google.com/maps?q=${encodeURIComponent(lead.property_address)}&output=embed&z=16`}
+                    width="100%"
+                    height="220"
+                    style={{ border: 0, display: "block" }}
+                    allowFullScreen
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    title="Ubicación de la propiedad"
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Notes */}
