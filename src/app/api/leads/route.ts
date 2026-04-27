@@ -34,9 +34,9 @@ export async function POST(req: NextRequest) {
     const parsed = leadSchema.safeParse(body);
 
     if (!parsed.success) {
-      console.error("[API /leads] Validation error:", JSON.stringify(parsed.error.flatten()));
+      console.error("[API /leads] validation_failed fields=%d", Object.keys(parsed.error.flatten().fieldErrors).length);
       return NextResponse.json(
-        { message: "Datos del formulario inválidos", errors: parsed.error.flatten() },
+        { message: "Datos del formulario inválidos" },
         { status: 400 }
       );
     }
@@ -57,9 +57,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, id: lead.id }, { status: 201 });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Error interno del servidor";
-    console.error("[API /leads] Error:", err);
-    return NextResponse.json({ message }, { status: 500 });
+    console.error("[API /leads] internal_error name=%s", err instanceof Error ? err.name : "Unknown");
+    return NextResponse.json({ message: "Error interno del servidor" }, { status: 500 });
   }
 }
 

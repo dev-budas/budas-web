@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { createServerClient } from "@/lib/supabase";
 import { createServiceClient } from "@/lib/supabase/service";
 import type { RolePermissions, PermissionKey, UserPermissionsOverride } from "@/lib/permissions";
 import { PERMISSION_DEFS } from "@/lib/permissions";
@@ -46,7 +45,7 @@ export async function createTeamUser(data: {
   if (profile?.role !== "admin") return { error: "Solo el admin puede crear usuarios" };
 
   // Create user via Admin API (requires service role key)
-  const admin = createServerClient();
+  const admin = createServiceClient();
   const { data: newUser, error: authError } = await admin.auth.admin.createUser({
     email: data.email,
     password: data.password,
@@ -79,7 +78,7 @@ export async function deleteTeamUser(targetUserId: string) {
   if (profile?.role !== "admin") return { error: "Solo el admin puede eliminar usuarios" };
   if (targetUserId === user.id) return { error: "No puedes eliminarte a ti mismo" };
 
-  const admin = createServerClient();
+  const admin = createServiceClient();
   const { error } = await admin.auth.admin.deleteUser(targetUserId);
   if (error) return { error: error.message };
 

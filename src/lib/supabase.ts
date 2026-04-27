@@ -1,7 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
+import { createServiceClient } from "@/lib/supabase/service";
 import type { Lead } from "@/types";
 
-// Lazy clients — created on first call, not at module evaluation time
+// Lazy anon client — for public/client-side reads only
 let _anonClient: ReturnType<typeof createClient> | null = null;
 
 export function getSupabaseClient() {
@@ -14,13 +15,8 @@ export function getSupabaseClient() {
   return _anonClient;
 }
 
-// Server-only client with elevated privileges (for API routes)
-export function createServerClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
+// Delegate to the canonical service client in supabase/service.ts
+export { createServiceClient as createServerClient };
 
 /* ─── Lead queries ───────────────────────────────────────────────────────── */
 
@@ -34,7 +30,7 @@ export async function createLead(
     utm_medium?: string;
   }
 ) {
-  const client = createServerClient();
+  const client = createServiceClient();
   const { data: lead, error } = await client
     .from("leads")
     .insert({ ...data, status: "nuevo" })
@@ -46,7 +42,7 @@ export async function createLead(
 }
 
 export async function getLeads(status?: Lead["status"]) {
-  const client = createServerClient();
+  const client = createServiceClient();
   let query = client
     .from("leads")
     .select("*")
@@ -62,7 +58,7 @@ export async function getLeads(status?: Lead["status"]) {
 }
 
 export async function updateLeadStatus(id: string, status: Lead["status"]) {
-  const client = createServerClient();
+  const client = createServiceClient();
   const { error } = await client
     .from("leads")
     .update({ status, updated_at: new Date().toISOString() })
@@ -75,7 +71,7 @@ export async function appendWhatsAppMessage(
   leadId: string,
   message: { role: "bot" | "lead"; content: string }
 ) {
-  const client = createServerClient();
+  const client = createServiceClient();
 
   const { data: lead, error: fetchError } = await client
     .from("leads")
@@ -101,7 +97,7 @@ export async function appendWhatsAppMessage(
 }
 
 export async function getLeadByPhone(phone: string) {
-  const client = createServerClient();
+  const client = createServiceClient();
   const { data, error } = await client
     .from("leads")
     .select("*")

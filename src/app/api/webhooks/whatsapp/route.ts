@@ -6,6 +6,7 @@ import {
   updateLeadStatus,
   appendWhatsAppMessage,
 } from "@/lib/supabase";
+import { createServiceClient } from "@/lib/supabase/service";
 import { formatPhone } from "@/lib/utils";
 import { sendQualifiedLeadEmail, sendUnqualifiedLeadEmail } from "@/lib/email";
 import type { WhatsAppWebhookPayload, Lead } from "@/types";
@@ -48,8 +49,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ status: "ok" });
   } catch (err) {
-    console.error("[Webhook/WhatsApp] Error:", err);
-    // Always return 200 to Meta to prevent retries
+    console.error("[Webhook/WhatsApp] internal_error name=%s", err instanceof Error ? err.name : "Unknown");
     return NextResponse.json({ status: "error" }, { status: 200 });
   }
 }
@@ -103,9 +103,7 @@ async function handleIncomingMessage(phone: string, text: string) {
       ...result.extractedData,
     };
 
-    const { createServerClient } = await import("@/lib/supabase");
-    const client = createServerClient();
-    await client
+    await createServiceClient()
       .from("leads")
       .update(updatePayload)
       .eq("id", lead.id);
