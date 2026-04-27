@@ -8,6 +8,7 @@ export type LeadStatus =
   | "no_calificado"
   | "en_seguimiento"
   | "visita_agendada"
+  | "cliente"
   | "captado"
   | "perdido";
 
@@ -136,6 +137,20 @@ export interface Visit {
   address?: string;
   notes?: string;
   status: VisitStatus;
+  reminder_sent: boolean;
+  created_at: string;
+}
+
+/* ─── Lead Files ─────────────────────────────────────────────────────────── */
+
+export interface LeadFile {
+  id: string;
+  lead_id: string;
+  filename: string;
+  storage_path: string;
+  content_type: string;
+  size_bytes?: number;
+  uploaded_by?: string;
   created_at: string;
 }
 
@@ -186,6 +201,11 @@ export const LEAD_STATUS_CONFIG: Record<
     label: "Visita agendada",
     color: "#EC4899",
     description: "Cita para valoración",
+  },
+  cliente: {
+    label: "Cliente",
+    color: "#059669",
+    description: "Visita realizada, en proceso de captación",
   },
   captado: {
     label: "Captado",

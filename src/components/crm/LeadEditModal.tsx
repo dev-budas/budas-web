@@ -223,7 +223,7 @@ function VisitForm({ leadId, profiles, currentAgentId, disabled, onCreated }: {
     setSaving(true);
     try {
       await createVisit({ lead_id: leadId, agent_id: agentId || undefined, scheduled_at: scheduledAt, address: address || undefined, notes: notes || undefined });
-      onCreated({ id: crypto.randomUUID(), lead_id: leadId, agent_id: agentId || undefined, scheduled_at: scheduledAt, address: address || undefined, notes: notes || undefined, status: "pending", created_at: new Date().toISOString() });
+      onCreated({ id: crypto.randomUUID(), lead_id: leadId, agent_id: agentId || undefined, scheduled_at: scheduledAt, address: address || undefined, notes: notes || undefined, status: "pending", reminder_sent: false, created_at: new Date().toISOString() });
       setOpen(false); setScheduledAt(""); setAddress(""); setNotes("");
     } finally { setSaving(false); }
   }

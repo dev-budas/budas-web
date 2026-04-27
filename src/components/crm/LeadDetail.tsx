@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LEAD_STATUS_CONFIG } from "@/types";
-import type { Lead, LeadNote, LeadStatus, Visit } from "@/types";
+import type { Lead, LeadFile, LeadNote, LeadStatus, Visit } from "@/types";
 import { updateLeadStatus, addLeadNote, assignAgent, createVisit } from "@/app/(admin)/crm/actions";
 import { cn } from "@/lib/utils";
 import {
@@ -15,7 +15,9 @@ import {
   X,
   User,
   Lock,
+  Paperclip,
 } from "lucide-react";
+import { FilesSection } from "@/components/crm/FilesSection";
 
 /* ── Status Badge ──────────────────────────────────────────────────────────── */
 function StatusBadge({ status }: { status: LeadStatus }) {
@@ -505,12 +507,13 @@ interface LeadDetailProps {
   lead: Lead;
   visits: Visit[];
   notes: LeadNote[];
+  files: LeadFile[];
   profiles: { id: string; full_name: string }[];
   isAdmin: boolean;
   currentUserId: string;
 }
 
-export function LeadDetail({ lead, visits, notes, profiles, isAdmin, currentUserId }: LeadDetailProps) {
+export function LeadDetail({ lead, visits, notes, files, profiles, isAdmin, currentUserId }: LeadDetailProps) {
   const canEdit = isAdmin || lead.assigned_agent === currentUserId;
   const messages = (lead.whatsapp_conversation ?? []) as WaMessage[];
 
@@ -586,6 +589,15 @@ export function LeadDetail({ lead, visits, notes, profiles, isAdmin, currentUser
               {!canEdit && <Lock className="w-3 h-3 text-muted-foreground ml-auto" />}
             </div>
             <NotesSection leadId={lead.id} initialNotes={notes} disabled={!canEdit} />
+          </div>
+
+          {/* Files */}
+          <div className="bg-surface border border-border rounded-xl p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <Paperclip className="w-4 h-4 text-muted-foreground" />
+              <h2 className="text-sm font-semibold text-foreground">Archivos y fotos</h2>
+            </div>
+            <FilesSection leadId={lead.id} initialFiles={files} />
           </div>
 
           {/* WhatsApp conversation */}

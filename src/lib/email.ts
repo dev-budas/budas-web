@@ -105,6 +105,79 @@ export async function sendUnqualifiedLeadEmail(lead: LeadSummary) {
   });
 }
 
+interface VisitSummary {
+  id: string;
+  scheduled_at: string;
+  address?: string | null;
+  notes?: string | null;
+}
+
+export async function sendVisitConfirmationEmail(
+  visit: VisitSummary,
+  lead: LeadSummary,
+  agentEmail: string
+) {
+  const leadUrl = `${APP_URL}/crm/leads/${lead.id}`;
+  const date = new Date(visit.scheduled_at).toLocaleString("es-ES", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  await getResend().emails.send({
+    from: FROM,
+    to: agentEmail,
+    subject: `Visita confirmada: ${lead.name} — ${date}`,
+    html: buildEmail({
+      title: "Visita confirmada",
+      accentColor: "#EC4899",
+      badge: "Visita confirmada",
+      badgeColor: "#EC4899",
+      headline: lead.name,
+      subline: `${lead.phone}${lead.property_city ? ` · ${lead.property_city}` : ""}`,
+      body: `Se ha programado una visita para el <strong>${date}</strong>${visit.address ? ` en <strong>${visit.address}</strong>` : ""}.${visit.notes ? `<br/><br/>Notas: ${visit.notes}` : ""}`,
+      ctaLabel: "Ver lead",
+      ctaUrl: leadUrl,
+    }),
+  });
+}
+
+export async function sendVisitReminderEmail(
+  visit: VisitSummary,
+  lead: LeadSummary,
+  agentEmail: string
+) {
+  const leadUrl = `${APP_URL}/crm/leads/${lead.id}`;
+  const date = new Date(visit.scheduled_at).toLocaleString("es-ES", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  await getResend().emails.send({
+    from: FROM,
+    to: agentEmail,
+    subject: `Recordatorio de visita en 4 horas: ${lead.name}`,
+    html: buildEmail({
+      title: "Recordatorio de visita",
+      accentColor: "#F59E0B",
+      badge: "Recordatorio — 4 horas",
+      badgeColor: "#F59E0B",
+      headline: lead.name,
+      subline: `${lead.phone}${lead.property_city ? ` · ${lead.property_city}` : ""}`,
+      body: `Tu visita con <strong>${lead.name}</strong> está programada para las <strong>${date}</strong>${visit.address ? ` en <strong>${visit.address}</strong>` : ""}. ¡Recuerda prepararte con tiempo!`,
+      ctaLabel: "Ver lead",
+      ctaUrl: leadUrl,
+    }),
+  });
+}
+
 interface EmailParams {
   title: string;
   accentColor: string;

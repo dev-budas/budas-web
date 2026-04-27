@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { sendQualifiedLeadEmail, sendUnqualifiedLeadEmail, sendLeadAssignedEmail } from "@/lib/email";
+import { sendQualifiedLeadEmail, sendUnqualifiedLeadEmail, sendLeadAssignedEmail, sendVisitConfirmationEmail } from "@/lib/email";
 import type { LeadStatus } from "@/types";
 
 async function getSession() {
@@ -49,6 +49,7 @@ export async function updateLeadStatus(leadId: string, status: LeadStatus) {
   revalidatePath("/crm");
   revalidatePath("/crm/leads");
   revalidatePath("/crm/pipeline");
+  revalidatePath("/crm/clientes");
   revalidatePath(`/crm/leads/${leadId}`);
 
   if (status === "calificado" || status === "no_calificado") {
@@ -138,17 +139,44 @@ export async function createVisit(data: {
   address?: string;
   notes?: string;
 }) {
-  const { supabase } = await requireEditAccess(data.lead_id);
-  const { error } = await supabase.from("visits").insert(data);
+  const { supabase, user } = await requireEditAccess(data.lead_id);
+
+  const { data: visit, error } = await supabase
+    .from("visits")
+    .insert(data)
+    .select()
+    .single();
   if (error) throw error;
+
   await supabase
     .from("leads")
-    .update({ status: "visita_agendada", updated_at: new Date().toISOString() })
+    .update({ status: "cliente", updated_at: new Date().toISOString() })
     .eq("id", data.lead_id);
+
   revalidatePath(`/crm/leads/${data.lead_id}`);
   revalidatePath("/crm/pipeline");
   revalidatePath("/crm/calendario");
+  revalidatePath("/crm/clientes");
   revalidatePath("/crm");
+
+  // Send confirmation email to the agent who created the visit
+  try {
+    const { data: { user: agentUser } } = await supabase.auth.admin.getUserById(user.id);
+    const agentEmail = agentUser?.email;
+    if (agentEmail) {
+      const { data: lead } = await supabase
+        .from("leads")
+        .select("id, name, phone, property_city, property_type")
+        .eq("id", data.lead_id)
+        .single();
+      if (lead) {
+        await sendVisitConfirmationEmail(visit, lead, agentEmail);
+        console.log(`[Email] visit confirmation sent lead=${data.lead_id} agent=${user.id}`);
+      }
+    }
+  } catch (e) {
+    console.error("[Email] visit confirmation failed:", e);
+  }
 }
 
 export async function updateVisitStatus(visitId: string, status: string) {
