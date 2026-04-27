@@ -20,11 +20,11 @@ import type { ResolvedPermissions } from "@/lib/permissions";
 
 const allNavItems = [
   { href: "/crm",                label: "Dashboard",     icon: LayoutDashboard, exact: true,  permission: null },
+  { href: "/crm/clientes",       label: "Clientes",      icon: UserCheck,       exact: false, permission: null },
   { href: "/crm/leads",          label: "Leads",         icon: Users,           exact: false, permission: null },
   { href: "/crm/pipeline",       label: "Pipeline",      icon: Kanban,          exact: false, permission: null },
-  { href: "/crm/calendario",     label: "Calendario",    icon: Calendar,        exact: false, permission: null },
-  { href: "/crm/clientes",       label: "Clientes",      icon: UserCheck,       exact: false, permission: null },
   { href: "/crm/conversaciones", label: "WhatsApp",      icon: MessageSquare,   exact: false, permission: null },
+  { href: "/crm/calendario",     label: "Calendario",    icon: Calendar,        exact: false, permission: null },
   { href: "/crm/estadisticas",   label: "Estadísticas",  icon: BarChart3,       exact: false, permission: "view_stats" as const },
   { href: "/crm/settings",       label: "Configuración", icon: Settings,        exact: false, permission: null },
 ];
