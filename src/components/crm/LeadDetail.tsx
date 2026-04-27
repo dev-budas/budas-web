@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { LEAD_STATUS_CONFIG } from "@/types";
 import type { Lead, LeadFile, LeadNote, LeadStatus, Visit } from "@/types";
@@ -38,6 +38,12 @@ function StatusSelector({ leadId, current, disabled }: { leadId: string; current
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
   const router = useRouter();
+
+  // Sync when the server updates the status externally (e.g. createVisit → cliente)
+  useEffect(() => {
+    setValue(current);
+    setDirty(false);
+  }, [current]);
 
   function handleChange(e: React.ChangeEvent<HTMLSelectElement>) {
     setValue(e.target.value as LeadStatus);

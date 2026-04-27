@@ -126,6 +126,9 @@ export async function sendVisitConfirmationEmail(
     hour: "2-digit",
     minute: "2-digit",
   });
+  const mapUrl = visit.address
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(visit.address)}`
+    : undefined;
 
   await getResend().emails.send({
     from: FROM,
@@ -138,9 +141,11 @@ export async function sendVisitConfirmationEmail(
       badgeColor: "#EC4899",
       headline: lead.name,
       subline: `${lead.phone}${lead.property_city ? ` · ${lead.property_city}` : ""}`,
-      body: `Se ha programado una visita para el <strong>${date}</strong>${visit.address ? ` en <strong>${visit.address}</strong>` : ""}.${visit.notes ? `<br/><br/>Notas: ${visit.notes}` : ""}`,
+      body: `Se ha programado una visita para el <strong>${date}</strong>.${visit.notes ? `<br/><br/>Notas: ${visit.notes}` : ""}`,
       ctaLabel: "Ver lead",
       ctaUrl: leadUrl,
+      mapUrl,
+      mapAddress: visit.address ?? undefined,
     }),
   });
 }
@@ -160,6 +165,10 @@ export async function sendVisitReminderEmail(
     minute: "2-digit",
   });
 
+  const mapUrl = visit.address
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(visit.address)}`
+    : undefined;
+
   await getResend().emails.send({
     from: FROM,
     to: agentEmail,
@@ -171,9 +180,11 @@ export async function sendVisitReminderEmail(
       badgeColor: "#F59E0B",
       headline: lead.name,
       subline: `${lead.phone}${lead.property_city ? ` · ${lead.property_city}` : ""}`,
-      body: `Tu visita con <strong>${lead.name}</strong> está programada para las <strong>${date}</strong>${visit.address ? ` en <strong>${visit.address}</strong>` : ""}. ¡Recuerda prepararte con tiempo!`,
+      body: `Tu visita con <strong>${lead.name}</strong> está programada para las <strong>${date}</strong>. ¡Recuerda prepararte con tiempo!`,
       ctaLabel: "Ver lead",
       ctaUrl: leadUrl,
+      mapUrl,
+      mapAddress: visit.address ?? undefined,
     }),
   });
 }
@@ -188,6 +199,8 @@ interface EmailParams {
   body: string;
   ctaLabel: string;
   ctaUrl: string;
+  mapUrl?: string;
+  mapAddress?: string;
 }
 
 function buildEmail(p: EmailParams): string {
@@ -242,6 +255,36 @@ function buildEmail(p: EmailParams): string {
 
                     <!-- Body text -->
                     <p style="margin:0 0 28px;font-size:15px;line-height:1.6;color:#374151;">${p.body}</p>
+
+                    ${p.mapUrl && p.mapAddress ? `
+                    <!-- Map block -->
+                    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+                      <tr>
+                        <td style="background:#F8F7F4;border:1px solid #E5E3DE;border-radius:12px;padding:16px 20px;">
+                          <table width="100%" cellpadding="0" cellspacing="0">
+                            <tr>
+                              <td style="padding-bottom:8px;">
+                                <span style="font-size:11px;font-weight:600;letter-spacing:0.06em;color:#9CA3AF;text-transform:uppercase;">Ubicación</span>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td style="padding-bottom:12px;">
+                                <span style="font-size:14px;color:#1B3A5C;font-weight:500;">📍 ${p.mapAddress}</span>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td>
+                                <a href="${p.mapUrl}"
+                                  style="display:inline-block;background:#FFFFFF;border:1px solid #C9A96E;color:#C9A96E;text-decoration:none;font-size:13px;font-weight:600;padding:8px 18px;border-radius:8px;">
+                                  Ver en Google Maps →
+                                </a>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+                    ` : ""}
 
                     <!-- CTA -->
                     <a href="${p.ctaUrl}"

@@ -148,10 +148,11 @@ export async function createVisit(data: {
     .single();
   if (error) throw error;
 
-  await supabase
+  const { error: statusError } = await supabase
     .from("leads")
     .update({ status: "cliente", updated_at: new Date().toISOString() })
     .eq("id", data.lead_id);
+  if (statusError) throw statusError;
 
   revalidatePath(`/crm/leads/${data.lead_id}`);
   revalidatePath("/crm/pipeline");
