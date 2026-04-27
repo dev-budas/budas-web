@@ -172,26 +172,25 @@ export default async function ClientesPage({
             const agentName = lead.assigned_agent ? (profileMap[lead.assigned_agent] ?? null) : null;
 
             return (
-              <a
+              <div
                 key={lead.id}
-                href={`/crm/leads/${lead.id}`}
                 className="group bg-surface border border-border rounded-xl p-5 hover:shadow-md hover:border-primary/30 transition-all duration-200 flex flex-col gap-4"
               >
                 {/* Top row: avatar + status */}
                 <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-3">
+                  <a href={`/crm/leads/${lead.id}`} className="flex items-center gap-3 min-w-0">
                     <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
                       <span className="text-sm font-bold text-primary">
                         {lead.name.charAt(0).toUpperCase()}
                       </span>
                     </div>
-                    <div>
-                      <p className="font-semibold text-foreground text-sm leading-tight group-hover:text-primary transition-colors">
+                    <div className="min-w-0">
+                      <p className="font-semibold text-foreground text-sm leading-tight group-hover:text-primary transition-colors truncate">
                         {lead.name}
                       </p>
                       <p className="text-xs text-muted-foreground">{lead.phone}</p>
                     </div>
-                  </div>
+                  </a>
                   {cfg && (
                     <span
                       className="text-[11px] font-medium px-2.5 py-1 rounded-full whitespace-nowrap flex-shrink-0"
@@ -221,7 +220,6 @@ export default async function ClientesPage({
                         href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(lead.property_address)}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
                         className="truncate text-accent hover:underline underline-offset-2"
                       >
                         {lead.property_address}
@@ -269,7 +267,7 @@ export default async function ClientesPage({
                     <span>{agentName ?? "Sin asignar"}</span>
                   </div>
                 </div>
-              </a>
+              </div>
             );
           })}
         </div>
