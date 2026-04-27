@@ -569,7 +569,13 @@ export function LeadDetail({ lead, visits, notes, files, profiles, isAdmin, curr
             <div className="grid grid-cols-2 gap-4">
               <InfoRow label="Email" value={lead.email ?? "—"} />
               <InfoRow label="Ciudad" value={lead.property_city ?? "—"} />
-              <InfoRow label="Dirección" value={lead.property_address ?? "—"} />
+              <InfoRow
+                label="Dirección"
+                value={lead.property_address ?? "—"}
+                href={lead.property_address
+                  ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(lead.property_address)}`
+                  : undefined}
+              />
               <InfoRow label="Tipo de propiedad" value={lead.property_type?.replace("_", " ") ?? "—"} />
               <InfoRow label="Habitaciones" value={lead.rooms != null ? String(lead.rooms) : "—"} />
               <InfoRow label="Baños" value={lead.bathrooms != null ? String(lead.bathrooms) : "—"} />
@@ -664,11 +670,18 @@ export function LeadDetail({ lead, visits, notes, files, profiles, isAdmin, curr
   );
 }
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+function InfoRow({ label, value, href }: { label: string; value: string; href?: string }) {
   return (
     <div>
       <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide mb-0.5">{label}</p>
-      <p className="text-sm text-foreground capitalize">{value}</p>
+      {href ? (
+        <a href={href} target="_blank" rel="noopener noreferrer"
+          className="text-sm text-accent hover:underline underline-offset-2 break-words">
+          {value}
+        </a>
+      ) : (
+        <p className="text-sm text-foreground capitalize">{value}</p>
+      )}
     </div>
   );
 }

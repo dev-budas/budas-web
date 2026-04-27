@@ -209,9 +209,17 @@ export default async function ClientesPage({
                     </div>
                   )}
                   {lead.property_address && (
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
-                      <span className="truncate">{lead.property_address}</span>
+                    <div className="flex items-center gap-2 text-xs">
+                      <MapPin className="w-3.5 h-3.5 flex-shrink-0 text-muted-foreground" />
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(lead.property_address)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="truncate text-accent hover:underline underline-offset-2"
+                      >
+                        {lead.property_address}
+                      </a>
                     </div>
                   )}
                   {lead.estimated_value && (
