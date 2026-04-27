@@ -7,6 +7,19 @@ function getResend() {
 
 const FROM = process.env.RESEND_FROM_EMAIL ?? "notificaciones@budasdelmediterraneo.com";
 const APP_URL = process.env.APP_URL ?? "https://lp1.budasdelmediterraneo.com";
+const GMAPS_KEY = process.env.GOOGLE_MAPS_STATIC_API_KEY ?? "";
+
+function staticMapUrl(address: string): string | undefined {
+  if (!GMAPS_KEY) return undefined;
+  const encoded = encodeURIComponent(address);
+  return (
+    `https://maps.googleapis.com/maps/api/staticmap` +
+    `?center=${encoded}&zoom=16&size=560x200&scale=2` +
+    `&markers=color:0x1B3A5C%7C${encoded}` +
+    `&style=feature:poi%7Cvisibility:off` +
+    `&key=${GMAPS_KEY}`
+  );
+}
 
 async function getTeamEmails(): Promise<string[]> {
   const supabase = createServiceClient();
@@ -146,6 +159,7 @@ export async function sendVisitConfirmationEmail(
       ctaUrl: leadUrl,
       mapUrl,
       mapAddress: visit.address ?? undefined,
+      mapImageUrl: visit.address ? staticMapUrl(visit.address) : undefined,
     }),
   });
 }
@@ -185,6 +199,7 @@ export async function sendVisitReminderEmail(
       ctaUrl: leadUrl,
       mapUrl,
       mapAddress: visit.address ?? undefined,
+      mapImageUrl: visit.address ? staticMapUrl(visit.address) : undefined,
     }),
   });
 }
@@ -201,6 +216,7 @@ interface EmailParams {
   ctaUrl: string;
   mapUrl?: string;
   mapAddress?: string;
+  mapImageUrl?: string;
 }
 
 function buildEmail(p: EmailParams): string {
@@ -260,15 +276,16 @@ function buildEmail(p: EmailParams): string {
                     <!-- Map block -->
                     <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
                       <tr>
-                        <td style="background:#F8F7F4;border:1px solid #E5E3DE;border-radius:12px;padding:16px 20px;">
-                          <table width="100%" cellpadding="0" cellspacing="0">
+                        <td style="background:#F8F7F4;border:1px solid #E5E3DE;border-radius:12px;overflow:hidden;">
+                          ${p.mapImageUrl ? `
+                          <a href="${p.mapUrl}" style="display:block;line-height:0;">
+                            <img src="${p.mapImageUrl}" width="560" alt="Mapa de ubicación"
+                              style="display:block;width:100%;max-width:560px;height:200px;object-fit:cover;" />
+                          </a>
+                          ` : ""}
+                          <table width="100%" cellpadding="0" cellspacing="0" style="padding:14px 20px;">
                             <tr>
-                              <td style="padding-bottom:8px;">
-                                <span style="font-size:11px;font-weight:600;letter-spacing:0.06em;color:#9CA3AF;text-transform:uppercase;">Ubicación</span>
-                              </td>
-                            </tr>
-                            <tr>
-                              <td style="padding-bottom:12px;">
+                              <td style="padding-bottom:10px;">
                                 <span style="font-size:14px;color:#1B3A5C;font-weight:500;">📍 ${p.mapAddress}</span>
                               </td>
                             </tr>
