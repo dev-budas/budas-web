@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { sendQualifiedLeadEmail, sendUnqualifiedLeadEmail, sendLeadAssignedEmail, sendVisitConfirmationEmail } from "@/lib/email";
-import type { LeadStatus } from "@/types";
+import type { LeadStatus, PropertyType, SellUrgency } from "@/types";
 
 async function getSession() {
   // Auth check via session client, writes via service client (bypasses RLS)
@@ -178,6 +178,31 @@ export async function createVisit(data: {
   } catch (e) {
     console.error("[Email] visit confirmation failed:", e);
   }
+}
+
+export async function updateLeadInfo(
+  leadId: string,
+  data: {
+    email?: string;
+    property_address?: string;
+    property_city?: string;
+    property_type?: PropertyType;
+    rooms?: number;
+    bathrooms?: number;
+    estimated_value?: number;
+    is_owner?: boolean;
+    urgency?: SellUrgency;
+    has_mortgage?: boolean;
+  }
+) {
+  const { supabase } = await requireEditAccess(leadId);
+  const { error } = await supabase
+    .from("leads")
+    .update({ ...data, updated_at: new Date().toISOString() })
+    .eq("id", leadId);
+  if (error) throw error;
+  revalidatePath(`/crm/leads/${leadId}`);
+  revalidatePath("/crm/clientes");
 }
 
 export async function updateVisitStatus(visitId: string, status: string) {

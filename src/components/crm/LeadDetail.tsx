@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { LEAD_STATUS_CONFIG } from "@/types";
-import type { Lead, LeadFile, LeadNote, LeadStatus, Visit } from "@/types";
-import { updateLeadStatus, addLeadNote, assignAgent, createVisit } from "@/app/(admin)/crm/actions";
+import type { Lead, LeadFile, LeadNote, LeadStatus, PropertyType, SellUrgency, Visit } from "@/types";
+import { updateLeadStatus, addLeadNote, assignAgent, createVisit, updateLeadInfo } from "@/app/(admin)/crm/actions";
 import { cn } from "@/lib/utils";
 import {
   ChevronLeft,
@@ -16,6 +16,7 @@ import {
   User,
   Lock,
   Paperclip,
+  Pencil,
 } from "lucide-react";
 import { FilesSection } from "@/components/crm/FilesSection";
 
@@ -508,6 +509,218 @@ function VisitsList({ visits, profiles }: { visits: Visit[]; profiles: { id: str
   );
 }
 
+/* ── Lead Info Editor ──────────────────────────────────────────────────────── */
+function LeadInfoEditor({ lead, canEdit }: { lead: Lead; canEdit: boolean }) {
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const router = useRouter();
+
+  const [form, setForm] = useState({
+    email: lead.email ?? "",
+    property_city: lead.property_city ?? "",
+    property_address: lead.property_address ?? "",
+    property_type: lead.property_type ?? "",
+    rooms: lead.rooms != null ? String(lead.rooms) : "",
+    bathrooms: lead.bathrooms != null ? String(lead.bathrooms) : "",
+    estimated_value: lead.estimated_value != null ? String(lead.estimated_value) : "",
+    is_owner: lead.is_owner != null ? String(lead.is_owner) : "",
+    urgency: lead.urgency ?? "",
+    has_mortgage: lead.has_mortgage != null ? String(lead.has_mortgage) : "",
+  });
+
+  useEffect(() => {
+    setForm({
+      email: lead.email ?? "",
+      property_city: lead.property_city ?? "",
+      property_address: lead.property_address ?? "",
+      property_type: lead.property_type ?? "",
+      rooms: lead.rooms != null ? String(lead.rooms) : "",
+      bathrooms: lead.bathrooms != null ? String(lead.bathrooms) : "",
+      estimated_value: lead.estimated_value != null ? String(lead.estimated_value) : "",
+      is_owner: lead.is_owner != null ? String(lead.is_owner) : "",
+      urgency: lead.urgency ?? "",
+      has_mortgage: lead.has_mortgage != null ? String(lead.has_mortgage) : "",
+    });
+  }, [lead]);
+
+  function set(field: string, value: string) {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    try {
+      await updateLeadInfo(lead.id, {
+        email: form.email || undefined,
+        property_city: form.property_city || undefined,
+        property_address: form.property_address || undefined,
+        property_type: (form.property_type as PropertyType) || undefined,
+        rooms: form.rooms ? parseInt(form.rooms) : undefined,
+        bathrooms: form.bathrooms ? parseInt(form.bathrooms) : undefined,
+        estimated_value: form.estimated_value ? parseFloat(form.estimated_value) : undefined,
+        is_owner: form.is_owner !== "" ? form.is_owner === "true" : undefined,
+        urgency: (form.urgency as SellUrgency) || undefined,
+        has_mortgage: form.has_mortgage !== "" ? form.has_mortgage === "true" : undefined,
+      });
+      setEditing(false);
+      router.refresh();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const inputCls = "w-full h-8 px-2.5 text-sm rounded-lg border border-border bg-surface focus:outline-none focus:ring-1 focus:ring-primary/30";
+  const selectCls = inputCls;
+
+  const mapAddress = form.property_address || lead.property_address;
+
+  return (
+    <div className="bg-surface border border-border rounded-xl p-5">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-sm font-semibold text-foreground">Información del lead</h2>
+        {canEdit && !editing && (
+          <button
+            onClick={() => setEditing(true)}
+            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Pencil className="w-3.5 h-3.5" />
+            Editar
+          </button>
+        )}
+        {editing && (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setEditing(false)}
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="flex items-center gap-1.5 text-xs font-semibold bg-primary text-white px-3 py-1.5 rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-60"
+            >
+              <Check className="w-3.5 h-3.5" />
+              {saving ? "Guardando..." : "Guardar"}
+            </button>
+          </div>
+        )}
+      </div>
+
+      {editing ? (
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide mb-1">Email</p>
+            <input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} className={inputCls} placeholder="email@ejemplo.com" />
+          </div>
+          <div>
+            <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide mb-1">Ciudad</p>
+            <input type="text" value={form.property_city} onChange={(e) => set("property_city", e.target.value)} className={inputCls} placeholder="Ej: Valencia" />
+          </div>
+          <div className="col-span-2">
+            <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide mb-1">Dirección</p>
+            <input type="text" value={form.property_address} onChange={(e) => set("property_address", e.target.value)} className={inputCls} placeholder="Calle, número, ciudad..." />
+          </div>
+          <div>
+            <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide mb-1">Tipo de propiedad</p>
+            <select value={form.property_type} onChange={(e) => set("property_type", e.target.value)} className={selectCls}>
+              <option value="">—</option>
+              <option value="piso">Piso</option>
+              <option value="casa">Casa</option>
+              <option value="chalet">Chalet</option>
+              <option value="local_comercial">Local comercial</option>
+              <option value="terreno">Terreno</option>
+              <option value="otro">Otro</option>
+            </select>
+          </div>
+          <div>
+            <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide mb-1">Valor estimado (€)</p>
+            <input type="number" value={form.estimated_value} onChange={(e) => set("estimated_value", e.target.value)} className={inputCls} placeholder="0" min="0" />
+          </div>
+          <div>
+            <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide mb-1">Habitaciones</p>
+            <input type="number" value={form.rooms} onChange={(e) => set("rooms", e.target.value)} className={inputCls} placeholder="—" min="0" max="20" />
+          </div>
+          <div>
+            <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide mb-1">Baños</p>
+            <input type="number" value={form.bathrooms} onChange={(e) => set("bathrooms", e.target.value)} className={inputCls} placeholder="—" min="0" max="10" />
+          </div>
+          <div>
+            <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide mb-1">¿Es propietario?</p>
+            <select value={form.is_owner} onChange={(e) => set("is_owner", e.target.value)} className={selectCls}>
+              <option value="">—</option>
+              <option value="true">Sí</option>
+              <option value="false">No</option>
+            </select>
+          </div>
+          <div>
+            <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide mb-1">Urgencia de venta</p>
+            <select value={form.urgency} onChange={(e) => set("urgency", e.target.value)} className={selectCls}>
+              <option value="">—</option>
+              <option value="inmediato">Inmediato</option>
+              <option value="3_meses">3 meses</option>
+              <option value="6_meses">6 meses</option>
+              <option value="sin_prisa">Sin prisa</option>
+            </select>
+          </div>
+          <div>
+            <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide mb-1">¿Tiene hipoteca?</p>
+            <select value={form.has_mortgage} onChange={(e) => set("has_mortgage", e.target.value)} className={selectCls}>
+              <option value="">—</option>
+              <option value="true">Sí</option>
+              <option value="false">No</option>
+            </select>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-4">
+          <InfoRow label="Email" value={lead.email ?? "—"} />
+          <InfoRow label="Ciudad" value={lead.property_city ?? "—"} />
+          <InfoRow
+            label="Dirección"
+            value={lead.property_address ?? "—"}
+            href={lead.property_address
+              ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(lead.property_address)}`
+              : undefined}
+          />
+          <InfoRow label="Tipo de propiedad" value={lead.property_type?.replace("_", " ") ?? "—"} />
+          <InfoRow label="Habitaciones" value={lead.rooms != null ? String(lead.rooms) : "—"} />
+          <InfoRow label="Baños" value={lead.bathrooms != null ? String(lead.bathrooms) : "—"} />
+          <InfoRow label="Valor estimado" value={lead.estimated_value ? `${lead.estimated_value.toLocaleString("es-ES")} €` : "—"} />
+          <InfoRow label="Propietario" value={lead.is_owner === true ? "Sí" : lead.is_owner === false ? "No" : "—"} />
+          <InfoRow label="Urgencia" value={lead.urgency?.replace("_", " ") ?? "—"} />
+          <InfoRow label="Hipoteca" value={lead.has_mortgage === true ? "Sí" : lead.has_mortgage === false ? "No" : "—"} />
+          <InfoRow label="Fuente" value={lead.utm_source ?? "—"} />
+          <InfoRow
+            label="Fecha de entrada"
+            value={new Date(lead.created_at).toLocaleDateString("es-ES", {
+              day: "numeric", month: "long", year: "numeric",
+            })}
+          />
+        </div>
+      )}
+
+      {mapAddress && (
+        <div className="mt-5">
+          <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide mb-2">Mapa</p>
+          <div className="rounded-xl overflow-hidden border border-border">
+            <iframe
+              src={`https://maps.google.com/maps?q=${encodeURIComponent(mapAddress)}&output=embed&z=16`}
+              width="100%"
+              height="220"
+              style={{ border: 0, display: "block" }}
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              title="Ubicación de la propiedad"
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ── Main Component ────────────────────────────────────────────────────────── */
 interface LeadDetailProps {
   lead: Lead;
@@ -564,52 +777,7 @@ export function LeadDetail({ lead, visits, notes, files, profiles, isAdmin, curr
         <div className="space-y-6">
 
           {/* Lead info */}
-          <div className="bg-surface border border-border rounded-xl p-5">
-            <h2 className="text-sm font-semibold text-foreground mb-4">Información del lead</h2>
-            <div className="grid grid-cols-2 gap-4">
-              <InfoRow label="Email" value={lead.email ?? "—"} />
-              <InfoRow label="Ciudad" value={lead.property_city ?? "—"} />
-              <InfoRow
-                label="Dirección"
-                value={lead.property_address ?? "—"}
-                href={lead.property_address
-                  ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(lead.property_address)}`
-                  : undefined}
-              />
-              <InfoRow label="Tipo de propiedad" value={lead.property_type?.replace("_", " ") ?? "—"} />
-              <InfoRow label="Habitaciones" value={lead.rooms != null ? String(lead.rooms) : "—"} />
-              <InfoRow label="Baños" value={lead.bathrooms != null ? String(lead.bathrooms) : "—"} />
-              <InfoRow label="Valor estimado" value={lead.estimated_value ? `${lead.estimated_value.toLocaleString("es-ES")} €` : "—"} />
-              <InfoRow label="Propietario" value={lead.is_owner === true ? "Sí" : lead.is_owner === false ? "No" : "—"} />
-              <InfoRow label="Urgencia" value={lead.urgency?.replace("_", " ") ?? "—"} />
-              <InfoRow label="Hipoteca" value={lead.has_mortgage === true ? "Sí" : lead.has_mortgage === false ? "No" : "—"} />
-              <InfoRow label="Fuente" value={lead.utm_source ?? "—"} />
-              <InfoRow
-                label="Fecha de entrada"
-                value={new Date(lead.created_at).toLocaleDateString("es-ES", {
-                  day: "numeric", month: "long", year: "numeric",
-                })}
-              />
-            </div>
-
-            {lead.property_address && (
-              <div className="mt-5">
-                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide mb-2">Mapa</p>
-                <div className="rounded-xl overflow-hidden border border-border">
-                  <iframe
-                    src={`https://maps.google.com/maps?q=${encodeURIComponent(lead.property_address)}&output=embed&z=16`}
-                    width="100%"
-                    height="220"
-                    style={{ border: 0, display: "block" }}
-                    allowFullScreen
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                    title="Ubicación de la propiedad"
-                  />
-                </div>
-              </div>
-            )}
-          </div>
+          <LeadInfoEditor lead={lead} canEdit={canEdit} />
 
           {/* Notes */}
           <div className="bg-surface border border-border rounded-xl p-5">
