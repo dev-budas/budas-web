@@ -87,7 +87,6 @@ export async function getCampaigns(datePreset = "last_30d"): Promise<Campaign[]>
     fields: "id,name,status,objective,daily_budget,lifetime_budget",
     access_token: token(),
     limit: "50",
-    effective_status: JSON.stringify(["ACTIVE", "PAUSED"]),
   });
 
   const insightParams = new URLSearchParams({
@@ -119,7 +118,9 @@ export async function getCampaigns(datePreset = "last_30d"): Promise<Campaign[]>
     insightsMap[row.campaign_id] = parseInsightsRow(row);
   }
 
-  return (campaignsData.data ?? []).map((c: any) => ({
+  return (campaignsData.data ?? [])
+    .filter((c: any) => c.status !== "DELETED" && c.status !== "ARCHIVED")
+    .map((c: any) => ({
     id: c.id,
     name: c.name,
     status: c.status as CampaignStatus,
@@ -170,20 +171,20 @@ export async function getAdSets(campaignId: string, datePreset = "last_30d"): Pr
     limit: "20",
   });
 
-  const insightParams = new URLSearchParams({
+  const insightBase = new URLSearchParams({
     date_preset: datePreset,
     level: "adset",
     fields: `adset_id,${INSIGHT_FIELDS}`,
-    filtering: JSON.stringify([
-      { field: "campaign.id", operator: "IN", value: [campaignId] },
-    ]),
     access_token: token(),
     limit: "20",
   });
+  const insightUrl =
+    `${BASE}/${adAccount()}/insights?${insightBase}` +
+    `&filtering=[{"field":"campaign.id","operator":"IN","value":["${campaignId}"]}]`;
 
   const [adsetsRes, insightsRes] = await Promise.all([
     fetch(`${BASE}/${campaignId}/adsets?${adsetParams}`, { cache: "no-store" }),
-    fetch(`${BASE}/${adAccount()}/insights?${insightParams}`, { cache: "no-store" }),
+    fetch(insightUrl, { cache: "no-store" }),
   ]);
 
   const [adsetsData, insightsData] = await Promise.all([
