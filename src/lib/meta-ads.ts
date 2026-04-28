@@ -119,7 +119,7 @@ export async function getCampaigns(datePreset = "last_30d"): Promise<Campaign[]>
   }
 
   return (campaignsData.data ?? [])
-    .filter((c: any) => c.status !== "DELETED" && c.status !== "ARCHIVED")
+    .filter((c: any) => c.status !== "DELETED")
     .map((c: any) => ({
     id: c.id,
     name: c.name,

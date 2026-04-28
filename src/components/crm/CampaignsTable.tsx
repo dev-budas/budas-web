@@ -46,12 +46,28 @@ const fmtEur = (n: number) =>
 const fmtN = (n: number) =>
   n > 0 ? new Intl.NumberFormat("es-ES").format(n) : "—";
 
-function StatusDot({ status }: { status: CampaignStatus }) {
+function StatusDot({ status }: { status: string }) {
   if (status === "ACTIVE") {
     return (
       <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-emerald-600">
         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
         Activa
+      </span>
+    );
+  }
+  if (status === "IN_DRAFT" || status === "DRAFT") {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-amber-600">
+        <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+        Borrador
+      </span>
+    );
+  }
+  if (status === "ARCHIVED") {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground/60">
+        <span className="w-1.5 h-1.5 rounded-full bg-gray-300" />
+        Archivada
       </span>
     );
   }
