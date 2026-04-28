@@ -43,13 +43,20 @@ export default async function CampanasPage({
   let fetchError: string | null = null;
 
   if (isConfigured) {
-    try {
-      [campaigns, summary] = await Promise.all([
-        getCampaigns(preset),
-        getAccountSummary(preset),
-      ]);
-    } catch (e) {
-      fetchError = e instanceof Error ? e.message : "Error al conectar con Meta Ads";
+    const [campaignsResult, summaryResult] = await Promise.allSettled([
+      getCampaigns(preset),
+      getAccountSummary(preset),
+    ]);
+    if (campaignsResult.status === "fulfilled") {
+      campaigns = campaignsResult.value;
+    } else {
+      fetchError =
+        campaignsResult.reason instanceof Error
+          ? campaignsResult.reason.message
+          : "Error al conectar con Meta Ads";
+    }
+    if (summaryResult.status === "fulfilled") {
+      summary = summaryResult.value;
     }
   }
 

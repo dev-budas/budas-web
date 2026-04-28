@@ -4,7 +4,8 @@ function token() {
   return process.env.META_ADS_ACCESS_TOKEN ?? "";
 }
 function adAccount() {
-  return process.env.META_AD_ACCOUNT_ID ?? "";
+  const id = process.env.META_AD_ACCOUNT_ID ?? "";
+  return id.startsWith("act_") ? id : `act_${id}`;
 }
 
 export type CampaignStatus = "ACTIVE" | "PAUSED" | "ARCHIVED" | "DELETED";
