@@ -164,7 +164,7 @@ export default async function ClientesPage({
 
       {/* Cards grid */}
       {filtered.length === 0 ? (
-        <div className="bg-surface border border-border rounded-xl px-6 py-16 text-center">
+        <div className="bg-surface border border-border/60 rounded-2xl shadow-sm px-6 py-16 text-center">
           <p className="text-sm text-muted-foreground">No hay clientes que coincidan con tu búsqueda.</p>
         </div>
       ) : (
@@ -177,7 +177,7 @@ export default async function ClientesPage({
             return (
               <div
                 key={lead.id}
-                className="group bg-surface border border-border rounded-xl p-5 hover:shadow-md hover:border-primary/30 transition-all duration-200 flex flex-col gap-4"
+                className="group bg-surface border border-border/60 rounded-2xl shadow-sm p-5 hover:shadow-md hover:border-primary/30 transition-all duration-200 flex flex-col gap-4"
               >
                 {/* Top row: avatar + status */}
                 <div className="flex items-start justify-between gap-3">

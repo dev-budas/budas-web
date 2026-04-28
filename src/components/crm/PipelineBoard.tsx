@@ -40,7 +40,7 @@ function LeadCard({
       style={style}
       {...attributes}
       className={cn(
-        "bg-surface border border-border rounded-xl p-3.5 select-none transition-shadow",
+        "bg-surface border border-border/60 rounded-2xl shadow-sm p-3.5 select-none transition-shadow",
         isDragging ? "opacity-0" : "hover:shadow-md hover:border-primary/20"
       )}
     >

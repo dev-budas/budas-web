@@ -115,7 +115,7 @@ export default async function LeadsPage({
       </div>
 
       {/* Table */}
-      <div className="bg-surface border border-border rounded-xl overflow-hidden">
+      <div className="bg-surface border border-border/60 rounded-2xl shadow-sm overflow-hidden">
         {filtered.length === 0 ? (
           <p className="px-6 py-12 text-center text-sm text-muted-foreground">
             No se encontraron leads.

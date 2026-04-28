@@ -55,7 +55,7 @@ export default function AudienceBreakdown({ datePreset }: Props) {
   const rows = cache[activeTab] ?? [];
 
   return (
-    <div className="bg-surface border border-border rounded-xl p-6">
+    <div className="bg-surface border border-border/60 rounded-2xl shadow-sm p-6">
       <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
         <h2 className="text-sm font-semibold text-foreground">Audiencia</h2>
         <div className="flex gap-1.5">

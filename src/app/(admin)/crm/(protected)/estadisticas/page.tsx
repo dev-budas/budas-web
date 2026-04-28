@@ -118,7 +118,7 @@ export default async function EstadisticasPage() {
           { label: "Tasa captación",     value: captRate,         suffix: "%" },
           { label: "Captados",           value: captados,         suffix: "" },
         ].map(({ label, value, suffix }) => (
-          <div key={label} className="bg-surface border border-border rounded-xl p-5 text-center">
+          <div key={label} className="bg-surface border border-border/60 rounded-2xl shadow-sm p-5 text-center">
             <p className="text-3xl font-bold text-foreground">{value}<span className="text-lg">{suffix}</span></p>
             <p className="text-xs text-muted-foreground mt-1">{label}</p>
           </div>
@@ -128,13 +128,13 @@ export default async function EstadisticasPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
 
         {/* Leads por semana */}
-        <div className="bg-surface border border-border rounded-xl p-5">
+        <div className="bg-surface border border-border/60 rounded-2xl shadow-sm p-5">
           <h2 className="text-sm font-semibold text-foreground mb-4">Leads por semana</h2>
           <WeeklyChart weeklyData={weeklyData} />
         </div>
 
         {/* Por estado */}
-        <div className="bg-surface border border-border rounded-xl p-5">
+        <div className="bg-surface border border-border/60 rounded-2xl shadow-sm p-5">
           <h2 className="text-sm font-semibold text-foreground mb-4">Por estado</h2>
           <div className="space-y-3">
             {byStatus.filter((s) => s.value > 0).map((s) => (
@@ -150,7 +150,7 @@ export default async function EstadisticasPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
         {/* Por fuente */}
-        <div className="bg-surface border border-border rounded-xl p-5">
+        <div className="bg-surface border border-border/60 rounded-2xl shadow-sm p-5">
           <h2 className="text-sm font-semibold text-foreground mb-4">Por fuente de tráfico</h2>
           <div className="space-y-3">
             {bySources.length === 0 ? (
@@ -164,7 +164,7 @@ export default async function EstadisticasPage() {
         </div>
 
         {/* Por tipo de propiedad */}
-        <div className="bg-surface border border-border rounded-xl p-5">
+        <div className="bg-surface border border-border/60 rounded-2xl shadow-sm p-5">
           <h2 className="text-sm font-semibold text-foreground mb-4">Por tipo de propiedad</h2>
           <div className="space-y-3">
             {byType.length === 0 ? (

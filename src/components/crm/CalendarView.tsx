@@ -67,7 +67,7 @@ export function CalendarView({
     <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
 
       {/* Calendar grid */}
-      <div className="bg-surface border border-border rounded-xl overflow-hidden">
+      <div className="bg-surface border border-border/60 rounded-2xl shadow-sm overflow-hidden">
 
         {/* Month nav */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border">
@@ -153,7 +153,7 @@ export function CalendarView({
       </div>
 
       {/* Day detail panel */}
-      <div className="bg-surface border border-border rounded-xl overflow-hidden h-fit sticky top-6">
+      <div className="bg-surface border border-border/60 rounded-2xl shadow-sm overflow-hidden h-fit sticky top-6">
         <div className="px-4 py-3.5 border-b border-border">
           <h3 className="text-sm font-semibold text-foreground">
             {selectedDay

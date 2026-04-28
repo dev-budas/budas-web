@@ -187,8 +187,8 @@ export default async function CRMDashboard() {
           { label: "Conversaciones", value: stats.activos,     icon: MessageSquare, color: "text-purple-600", bg: "bg-purple-50" },
           { label: "Captados",       value: stats.captados,    icon: CalendarCheck, color: "text-primary",    bg: "bg-primary/10" },
         ].map(({ label, value, icon: Icon, color, bg }) => (
-          <div key={label} className="bg-surface border border-border rounded-xl p-5">
-            <div className={`w-9 h-9 rounded-lg ${bg} flex items-center justify-center mb-3`}>
+          <div key={label} className="bg-surface border border-border/60 rounded-2xl p-5 shadow-sm">
+            <div className={`w-9 h-9 rounded-xl ${bg} flex items-center justify-center mb-3`}>
               <Icon className={`w-4 h-4 ${color}`} />
             </div>
             <p className="text-2xl font-bold text-foreground">{value}</p>
@@ -201,13 +201,13 @@ export default async function CRMDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
 
         {/* Status distribution */}
-        <div className="bg-surface border border-border rounded-xl p-5">
+        <div className="bg-surface border border-border/60 rounded-2xl p-5 shadow-sm">
           <h2 className="text-sm font-semibold text-foreground mb-4">Distribución por estado</h2>
           <DonutChart leads={all} />
         </div>
 
         {/* Upcoming visits */}
-        <div className="bg-surface border border-border rounded-xl p-5">
+        <div className="bg-surface border border-border/60 rounded-2xl p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-semibold text-foreground">Próximas visitas</h2>
             <a href="/crm/calendario" className="text-xs text-accent hover:underline">Ver calendario →</a>
@@ -217,8 +217,8 @@ export default async function CRMDashboard() {
       </div>
 
       {/* Recent leads */}
-      <div className="bg-surface border border-border rounded-xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-border flex items-center justify-between">
+      <div className="bg-surface border border-border/60 rounded-2xl overflow-hidden shadow-sm">
+        <div className="px-6 py-4 border-b border-border/60 flex items-center justify-between">
           <h2 className="font-semibold text-foreground">Leads recientes</h2>
           <a href="/crm/leads" className="text-xs text-accent hover:underline">Ver todos →</a>
         </div>

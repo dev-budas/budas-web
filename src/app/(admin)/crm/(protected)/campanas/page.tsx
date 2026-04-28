@@ -121,7 +121,7 @@ export default async function CampanasPage({
       </div>
 
       {/* Tendencia chart */}
-      <div className="bg-surface border border-border rounded-xl p-6">
+      <div className="bg-surface border border-border/60 rounded-2xl shadow-sm p-6">
         <h2 className="text-sm font-semibold text-foreground mb-4">Tendencia — Gasto y Leads</h2>
         <CampaignChart data={dailyData} />
       </div>
@@ -143,7 +143,7 @@ function StatCard({ label, value, icon: Icon, color }: {
   label: string; value: string; icon: ElementType; color: string;
 }) {
   return (
-    <div className="bg-surface border border-border rounded-xl p-5">
+    <div className="bg-surface border border-border/60 rounded-2xl shadow-sm p-5">
       <div className="flex items-center justify-between mb-3">
         <p className="text-xs text-muted-foreground font-medium">{label}</p>
         <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${color}18` }}>

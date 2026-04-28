@@ -577,7 +577,7 @@ function LeadInfoEditor({ lead, canEdit }: { lead: Lead; canEdit: boolean }) {
   const mapAddress = form.property_address || lead.property_address;
 
   return (
-    <div className="bg-surface border border-border rounded-xl p-5">
+    <div className="bg-surface border border-border/60 rounded-2xl shadow-sm p-5">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-sm font-semibold text-foreground">Información del lead</h2>
         {canEdit && !editing && (
@@ -782,7 +782,7 @@ export function LeadDetail({ lead, visits, notes, files, profiles, isAdmin, curr
           <LeadInfoEditor lead={lead} canEdit={canEdit} />
 
           {/* Notes */}
-          <div className="bg-surface border border-border rounded-xl p-5">
+          <div className="bg-surface border border-border/60 rounded-2xl shadow-sm p-5">
             <div className="flex items-center gap-2 mb-4">
               <StickyNote className="w-4 h-4 text-muted-foreground" />
               <h2 className="text-sm font-semibold text-foreground">Notas</h2>
@@ -792,7 +792,7 @@ export function LeadDetail({ lead, visits, notes, files, profiles, isAdmin, curr
           </div>
 
           {/* Files */}
-          <div className="bg-surface border border-border rounded-xl p-5">
+          <div className="bg-surface border border-border/60 rounded-2xl shadow-sm p-5">
             <div className="flex items-center gap-2 mb-4">
               <Paperclip className="w-4 h-4 text-muted-foreground" />
               <h2 className="text-sm font-semibold text-foreground">Archivos y fotos</h2>
@@ -801,7 +801,7 @@ export function LeadDetail({ lead, visits, notes, files, profiles, isAdmin, curr
           </div>
 
           {/* WhatsApp conversation */}
-          <div className="bg-surface border border-border rounded-xl overflow-hidden">
+          <div className="bg-surface border border-border/60 rounded-2xl shadow-sm overflow-hidden">
             <div className="flex items-center gap-2 px-5 py-4 border-b border-border">
               <MessageSquare className="w-4 h-4 text-muted-foreground" />
               <h2 className="text-sm font-semibold text-foreground">Conversación WhatsApp</h2>
@@ -817,13 +817,13 @@ export function LeadDetail({ lead, visits, notes, files, profiles, isAdmin, curr
         <div className="space-y-4">
 
           {/* Status */}
-          <div className="bg-surface border border-border rounded-xl p-4">
+          <div className="bg-surface border border-border/60 rounded-2xl shadow-sm p-4">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Estado</p>
             <StatusSelector leadId={lead.id} current={lead.status} disabled={!canEdit} />
           </div>
 
           {/* Agent */}
-          <div className="bg-surface border border-border rounded-xl p-4">
+          <div className="bg-surface border border-border/60 rounded-2xl shadow-sm p-4">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
               Agente asignado
             </p>
@@ -837,7 +837,7 @@ export function LeadDetail({ lead, visits, notes, files, profiles, isAdmin, curr
           </div>
 
           {/* Visits */}
-          <div className="bg-surface border border-border rounded-xl p-4">
+          <div className="bg-surface border border-border/60 rounded-2xl shadow-sm p-4">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
               Visitas
             </p>

@@ -18,14 +18,20 @@ export default async function CRMLayout({ children }: { children: React.ReactNod
   const permissions = await getEffectivePermissions(user.id, profile?.role ?? "agent");
 
   return (
-    <div className="flex h-screen bg-background overflow-hidden">
+    <div className="flex h-screen overflow-hidden" style={{ background: "#F0EDE7" }}>
       <CRMSidebar
         userEmail={user.email}
         userName={profile?.full_name}
         userRole={profile?.role}
         permissions={permissions}
       />
-      <main className="flex-1 overflow-y-auto">
+      <main
+        className="flex-1 overflow-y-auto"
+        style={{
+          background: "linear-gradient(180deg, #F4F1EB 0%, #EEE9E1 100%)",
+          boxShadow: "inset 2px 0 8px rgba(0,0,0,0.04)",
+        }}
+      >
         {children}
       </main>
     </div>

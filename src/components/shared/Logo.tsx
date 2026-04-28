@@ -3,12 +3,13 @@ import { cn } from "@/lib/utils";
 interface LogoProps {
   variant?: "light" | "dark";
   className?: string;
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "xl" | "lg";
 }
 
 const sizes = {
-  sm: { main: "text-[22px]", sub: "text-[7px]", mt: "mt-[1px]" },
+  sm: { main: "text-[22px]", sub: "text-[7px]",  mt: "mt-[1px]" },
   md: { main: "text-[30px]", sub: "text-[9px]",  mt: "mt-[2px]" },
+  xl: { main: "text-[36px]", sub: "text-[10px]", mt: "mt-[3px]" },
   lg: { main: "text-[80px]", sub: "text-[16px]", mt: "mt-[4px]" },
 };
 

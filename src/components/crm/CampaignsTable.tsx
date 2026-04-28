@@ -273,7 +273,7 @@ export default function CampaignsTable({ campaigns, datePreset }: Props) {
 
   if (campaigns.length === 0) {
     return (
-      <div className="bg-surface border border-border rounded-xl px-6 py-16 text-center">
+      <div className="bg-surface border border-border/60 rounded-2xl shadow-sm px-6 py-16 text-center">
         <Megaphone className="w-8 h-8 text-muted-foreground/40 mx-auto mb-3" />
         <p className="text-sm text-muted-foreground">No hay campañas activas o pausadas en este período.</p>
       </div>
@@ -292,7 +292,7 @@ export default function CampaignsTable({ campaigns, datePreset }: Props) {
         <CampaignEditModal campaign={editingCampaign} onClose={() => setEditingCampaign(null)} />
       )}
 
-      <div className="bg-surface border border-border rounded-xl overflow-hidden">
+      <div className="bg-surface border border-border/60 rounded-2xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
