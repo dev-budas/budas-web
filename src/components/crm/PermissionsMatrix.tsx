@@ -7,6 +7,7 @@ import { updateRolePermissions } from "@/app/(admin)/crm/(protected)/settings/ac
 
 interface Props {
   agentPermissions: RolePermissions;
+  supervisorPermissions: RolePermissions;
 }
 
 function Toggle({ on, onClick }: { on: boolean; onClick: () => void }) {
@@ -27,23 +28,34 @@ function Toggle({ on, onClick }: { on: boolean; onClick: () => void }) {
   );
 }
 
-export function PermissionsMatrix({ agentPermissions }: Props) {
-  const [perms, setPerms] = useState<RolePermissions>(agentPermissions);
+export function PermissionsMatrix({ agentPermissions, supervisorPermissions }: Props) {
+  const [agentPerms, setAgentPerms] = useState<RolePermissions>(agentPermissions);
+  const [supervisorPerms, setSupervisorPerms] = useState<RolePermissions>(supervisorPermissions);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  function toggle(key: PermissionKey) {
-    setPerms((prev) => ({ ...prev, [key]: !prev[key] }));
+  function toggleAgent(key: PermissionKey) {
+    setAgentPerms((prev) => ({ ...prev, [key]: !prev[key] }));
+    setSaved(false);
+    setError(null);
+  }
+
+  function toggleSupervisor(key: PermissionKey) {
+    setSupervisorPerms((prev) => ({ ...prev, [key]: !prev[key] }));
     setSaved(false);
     setError(null);
   }
 
   function handleSave() {
     startTransition(async () => {
-      const result = await updateRolePermissions("agent", perms);
-      if (result?.error) {
-        setError(result.error);
+      const [r1, r2] = await Promise.all([
+        updateRolePermissions("supervisor", supervisorPerms),
+        updateRolePermissions("agent", agentPerms),
+      ]);
+      const err = r1?.error ?? r2?.error;
+      if (err) {
+        setError(err);
       } else {
         setSaved(true);
       }
@@ -66,12 +78,15 @@ export function PermissionsMatrix({ agentPermissions }: Props) {
 
       <div className="border border-border rounded-lg overflow-hidden">
         {/* Header */}
-        <div className="grid grid-cols-[1fr_100px_100px] bg-muted/40 px-4 py-2.5 border-b border-border">
+        <div className="grid grid-cols-[1fr_80px_100px_80px] bg-muted/40 px-4 py-2.5 border-b border-border">
           <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
             Permiso
           </span>
           <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide text-center">
             Admin
+          </span>
+          <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide text-center">
+            Supervisor
           </span>
           <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide text-center">
             Agente
@@ -82,7 +97,7 @@ export function PermissionsMatrix({ agentPermissions }: Props) {
         {PERMISSION_DEFS.map(({ key, label, description }, i) => (
           <div
             key={key}
-            className={`grid grid-cols-[1fr_100px_100px] px-4 py-3.5 items-center ${
+            className={`grid grid-cols-[1fr_80px_100px_80px] px-4 py-3.5 items-center ${
               i < PERMISSION_DEFS.length - 1 ? "border-b border-border" : ""
             }`}
           >
@@ -101,9 +116,14 @@ export function PermissionsMatrix({ agentPermissions }: Props) {
               </div>
             </div>
 
+            {/* Supervisor — toggleable */}
+            <div className="flex justify-center">
+              <Toggle on={supervisorPerms[key]} onClick={() => toggleSupervisor(key)} />
+            </div>
+
             {/* Agent — toggleable */}
             <div className="flex justify-center">
-              <Toggle on={perms[key]} onClick={() => toggle(key)} />
+              <Toggle on={agentPerms[key]} onClick={() => toggleAgent(key)} />
             </div>
           </div>
         ))}

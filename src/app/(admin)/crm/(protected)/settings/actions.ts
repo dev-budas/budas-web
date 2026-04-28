@@ -29,7 +29,7 @@ export async function createTeamUser(data: {
   full_name: string;
   email: string;
   password: string;
-  role: "admin" | "agent";
+  role: "admin" | "supervisor" | "agent";
 }) {
   // Verify caller is admin
   const supabase = await createClient();
@@ -102,13 +102,12 @@ async function requireAdmin() {
 }
 
 export async function updateRolePermissions(
-  role: "admin" | "agent",
+  role: "admin" | "supervisor" | "agent",
   permissions: Partial<RolePermissions>
 ) {
   const { error: authError } = await requireAdmin();
   if (authError) return { error: authError };
 
-  // Admin permissions cannot be changed
   if (role === "admin") return { error: "Los permisos de Admin no se pueden modificar" };
 
   const service = createServiceClient();
@@ -116,10 +115,12 @@ export async function updateRolePermissions(
     .from("role_permissions")
     .update({
       see_all_leads:   permissions.see_all_leads,
-      reassign_leads:  permissions.reassign_leads,
+      create_leads:    permissions.create_leads,
+      edit_leads:      permissions.edit_leads,
       delete_leads:    permissions.delete_leads,
-      view_stats:      permissions.view_stats,
+      reassign_leads:  permissions.reassign_leads,
       manage_pipeline: permissions.manage_pipeline,
+      view_stats:      permissions.view_stats,
       updated_at:      new Date().toISOString(),
     })
     .eq("role", role);
@@ -141,16 +142,17 @@ export async function updateUserPermissions(
   const allNull = PERMISSION_DEFS.every(({ key }) => overrides[key] === null);
 
   if (allNull) {
-    // Remove the override row entirely — user inherits everything from role
     await service.from("user_permissions").delete().eq("user_id", targetUserId);
   } else {
     await service.from("user_permissions").upsert({
       user_id:         targetUserId,
       see_all_leads:   overrides.see_all_leads,
-      reassign_leads:  overrides.reassign_leads,
+      create_leads:    overrides.create_leads,
+      edit_leads:      overrides.edit_leads,
       delete_leads:    overrides.delete_leads,
-      view_stats:      overrides.view_stats,
+      reassign_leads:  overrides.reassign_leads,
       manage_pipeline: overrides.manage_pipeline,
+      view_stats:      overrides.view_stats,
       updated_at:      new Date().toISOString(),
     });
   }

@@ -20,11 +20,13 @@ export default async function SettingsPage() {
     { data: profile },
     { data: team },
     { data: agentRolePerms },
+    { data: supervisorRolePerms },
     { data: userPermsRows },
   ] = await Promise.all([
     supabase.from("profiles").select("full_name, role").eq("id", user.id).single(),
     service.from("profiles").select("id, full_name, role").order("full_name"),
     service.from("role_permissions").select("*").eq("role", "agent").single(),
+    service.from("role_permissions").select("*").eq("role", "supervisor").single(),
     service.from("user_permissions").select("*"),
   ]);
 
@@ -62,8 +64,11 @@ export default async function SettingsPage() {
         </div>
 
         {/* Permissions matrix — admin only */}
-        {isAdmin && agentRolePerms && (
-          <PermissionsMatrix agentPermissions={agentRolePerms as RolePermissions} />
+        {isAdmin && agentRolePerms && supervisorRolePerms && (
+          <PermissionsMatrix
+            agentPermissions={agentRolePerms as RolePermissions}
+            supervisorPermissions={supervisorRolePerms as RolePermissions}
+          />
         )}
 
         {/* Team — admin only */}
@@ -72,6 +77,7 @@ export default async function SettingsPage() {
             currentUserId={user.id}
             team={(team ?? []) as { id: string; full_name: string; role: string }[]}
             agentRolePermissions={agentRolePerms as RolePermissions}
+            supervisorRolePermissions={supervisorRolePerms as RolePermissions}
             userPermissionsMap={userPermissionsMap}
           />
         )}

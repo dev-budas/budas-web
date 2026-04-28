@@ -17,13 +17,21 @@ interface Props {
   currentUserId: string;
   team: Member[];
   agentRolePermissions: RolePermissions | null;
+  supervisorRolePermissions: RolePermissions | null;
   userPermissionsMap: Record<string, UserPermissionsOverride>;
 }
+
+const ROLE_LABELS: Record<string, string> = {
+  admin: "Admin",
+  supervisor: "Supervisor",
+  agent: "Agente",
+};
 
 export function TeamPanel({
   currentUserId,
   team: initialTeam,
   agentRolePermissions,
+  supervisorRolePermissions,
   userPermissionsMap,
 }: Props) {
   const [team, setTeam] = useState(initialTeam);
@@ -55,14 +63,26 @@ export function TeamPanel({
     setExpandedId((prev) => (prev === memberId ? null : memberId));
   }
 
-  // Default role permissions fallback for display purposes
-  const defaultRolePerms: RolePermissions = agentRolePermissions ?? {
+  const defaultAgentPerms: RolePermissions = agentRolePermissions ?? {
     role: "agent",
     see_all_leads: true,
-    reassign_leads: false,
+    create_leads: false,
+    edit_leads: true,
     delete_leads: false,
+    reassign_leads: false,
     view_stats: true,
     manage_pipeline: false,
+  };
+
+  const defaultSupervisorPerms: RolePermissions = supervisorRolePermissions ?? {
+    role: "supervisor",
+    see_all_leads: true,
+    create_leads: true,
+    edit_leads: true,
+    delete_leads: false,
+    reassign_leads: true,
+    view_stats: true,
+    manage_pipeline: true,
   };
 
   return (
@@ -90,8 +110,9 @@ export function TeamPanel({
         <div className="divide-y divide-border">
           {team.map((member) => {
             const isExpanded = expandedId === member.id;
-            const isAgent = member.role === "agent";
+            const isCustomizable = member.role === "agent" || member.role === "supervisor";
             const hasOverride = !!userPermissionsMap[member.id];
+            const rolePerms = member.role === "supervisor" ? defaultSupervisorPerms : defaultAgentPerms;
 
             return (
               <div key={member.id}>
@@ -108,12 +129,12 @@ export function TeamPanel({
                       <p className="text-[10px] text-accent font-medium">Permisos personalizados</p>
                     )}
                   </div>
-                  <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-border/60 text-muted-foreground capitalize">
-                    {member.role}
+                  <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-border/60 text-muted-foreground">
+                    {ROLE_LABELS[member.role] ?? member.role}
                   </span>
 
-                  {/* Expand permissions — only for agents */}
-                  {isAgent && (
+                  {/* Expand permissions — agents and supervisors */}
+                  {isCustomizable && (
                     <button
                       onClick={() => toggleExpand(member.id)}
                       className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
@@ -140,10 +161,10 @@ export function TeamPanel({
                 </div>
 
                 {/* Permissions expand panel */}
-                {isExpanded && isAgent && (
+                {isExpanded && isCustomizable && (
                   <UserPermissionsRow
                     userId={member.id}
-                    rolePermissions={defaultRolePerms}
+                    rolePermissions={rolePerms}
                     initialOverrides={userPermissionsMap[member.id] ?? null}
                   />
                 )}

@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { sendQualifiedLeadEmail, sendUnqualifiedLeadEmail, sendLeadAssignedEmail, sendVisitConfirmationEmail } from "@/lib/email";
 import type { LeadStatus, PropertyType, SellUrgency } from "@/types";
+import { getEffectivePermissions } from "@/lib/permissions";
 
 async function getSession() {
   // Auth check via session client, writes via service client (bypasses RLS)
@@ -20,12 +21,16 @@ async function getSession() {
   return { supabase, user, profile };
 }
 
-// Fetches lead assignment and checks if the current user can edit it.
-// Rules: admin always yes | agent only if lead.assigned_agent === user.id
 async function requireEditAccess(leadId: string) {
   const { supabase, user, profile } = await getSession();
   const isAdmin = profile?.role === "admin";
   if (isAdmin) return { supabase, user, profile, isAdmin };
+
+  const perms = await getEffectivePermissions(user.id, profile?.role ?? "agent");
+  if (!perms.edit_leads) throw new Error("No tienes permiso para editar leads");
+
+  // Users with see_all_leads (e.g. supervisor) can edit any lead
+  if (perms.see_all_leads) return { supabase, user, profile, isAdmin };
 
   const { data: lead } = await supabase
     .from("leads")
@@ -198,7 +203,11 @@ export async function createManualLead(data: {
   status?: LeadStatus;
   notes?: string;
 }) {
-  const { supabase } = await getSession();
+  const { supabase, user, profile } = await getSession();
+  if (profile?.role !== "admin") {
+    const perms = await getEffectivePermissions(user.id, profile?.role ?? "agent");
+    if (!perms.create_leads) throw new Error("No tienes permiso para crear leads");
+  }
   const { name, phone, notes, status = "nuevo", ...rest } = data;
 
   const { data: lead, error } = await supabase

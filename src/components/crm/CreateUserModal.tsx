@@ -13,7 +13,7 @@ export function CreateUserModal({ onClose, onCreated }: Props) {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<"agent" | "admin">("agent");
+  const [role, setRole] = useState<"agent" | "supervisor" | "admin">("agent");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -103,8 +103,8 @@ export function CreateUserModal({ onClose, onCreated }: Props) {
             <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide block mb-1.5">
               Rol
             </label>
-            <div className="grid grid-cols-2 gap-2">
-              {(["agent", "admin"] as const).map((r) => (
+            <div className="grid grid-cols-3 gap-2">
+              {(["agent", "supervisor", "admin"] as const).map((r) => (
                 <button
                   key={r}
                   type="button"
@@ -115,7 +115,7 @@ export function CreateUserModal({ onClose, onCreated }: Props) {
                       : "border-border text-muted-foreground hover:border-primary/40"
                   }`}
                 >
-                  {r === "agent" ? "Agente" : "Admin"}
+                  {r === "agent" ? "Agente" : r === "supervisor" ? "Supervisor" : "Admin"}
                 </button>
               ))}
             </div>
