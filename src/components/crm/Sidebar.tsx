@@ -12,6 +12,7 @@ import {
   LogOut,
   Calendar,
   UserCheck,
+  Megaphone,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
@@ -24,6 +25,7 @@ const allNavItems = [
   { href: "/crm/leads",          label: "Leads",         icon: Users,           exact: false, permission: null },
   { href: "/crm/pipeline",       label: "Pipeline",      icon: Kanban,          exact: false, permission: null },
   { href: "/crm/conversaciones", label: "WhatsApp",      icon: MessageSquare,   exact: false, permission: null },
+  { href: "/crm/campanas",       label: "Campañas",      icon: Megaphone,       exact: false, permission: null },
   { href: "/crm/calendario",     label: "Calendario",    icon: Calendar,        exact: false, permission: null },
   { href: "/crm/estadisticas",   label: "Estadísticas",  icon: BarChart3,       exact: false, permission: "view_stats" as const },
   { href: "/crm/settings",       label: "Configuración", icon: Settings,        exact: false, permission: null },
