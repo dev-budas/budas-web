@@ -52,15 +52,22 @@ const INSIGHT_FIELDS =
 
 const LEAD_ACTIONS = ["lead", "onsite_conversion.lead_grouped"];
 
-function parseInsights(raw: unknown): CampaignInsights {
-  const d = (raw as any)?.data?.[0];
-  if (!d) return { spend: 0, impressions: 0, clicks: 0, leads: 0, cpl: 0, ctr: 0, cpc: 0 };
+const EMPTY_INSIGHTS: CampaignInsights = {
+  spend: 0,
+  impressions: 0,
+  clicks: 0,
+  leads: 0,
+  cpl: 0,
+  ctr: 0,
+  cpc: 0,
+};
 
+function parseInsightsRow(d: any): CampaignInsights {
+  if (!d) return EMPTY_INSIGHTS;
   const leadAction = d.actions?.find((a: any) => LEAD_ACTIONS.includes(a.action_type));
   const leadCost = d.cost_per_action_type?.find((a: any) =>
     LEAD_ACTIONS.includes(a.action_type)
   );
-
   return {
     spend: parseFloat(d.spend ?? "0"),
     impressions: parseInt(d.impressions ?? "0"),
@@ -75,37 +82,50 @@ function parseInsights(raw: unknown): CampaignInsights {
 export async function getCampaigns(datePreset = "last_30d"): Promise<Campaign[]> {
   if (!token() || !adAccount()) return [];
 
-  const fields = [
-    "id",
-    "name",
-    "status",
-    "objective",
-    "daily_budget",
-    "lifetime_budget",
-    `insights.date_preset(${datePreset}){${INSIGHT_FIELDS}}`,
-  ].join(",");
-
-  const params = new URLSearchParams({
-    fields,
+  const campaignParams = new URLSearchParams({
+    fields: "id,name,status,objective,daily_budget,lifetime_budget",
     access_token: token(),
     limit: "50",
     effective_status: JSON.stringify(["ACTIVE", "PAUSED"]),
   });
 
-  const res = await fetch(`${BASE}/${adAccount()}/campaigns?${params}`, {
-    next: { revalidate: 300 },
+  const insightParams = new URLSearchParams({
+    date_preset: datePreset,
+    level: "campaign",
+    fields: `campaign_id,${INSIGHT_FIELDS}`,
+    access_token: token(),
+    limit: "50",
   });
-  const data = await res.json();
-  if (data.error) throw new Error(data.error.message);
 
-  return (data.data ?? []).map((c: any) => ({
+  const [campaignsRes, insightsRes] = await Promise.all([
+    fetch(`${BASE}/${adAccount()}/campaigns?${campaignParams}`, {
+      next: { revalidate: 300 },
+    }),
+    fetch(`${BASE}/${adAccount()}/insights?${insightParams}`, {
+      next: { revalidate: 300 },
+    }),
+  ]);
+
+  const [campaignsData, insightsData] = await Promise.all([
+    campaignsRes.json(),
+    insightsRes.json(),
+  ]);
+
+  if (campaignsData.error) throw new Error(campaignsData.error.message);
+  // Insights error is non-fatal — campaigns may have no spend yet
+  const insightsMap: Record<string, CampaignInsights> = {};
+  for (const row of insightsData.data ?? []) {
+    insightsMap[row.campaign_id] = parseInsightsRow(row);
+  }
+
+  return (campaignsData.data ?? []).map((c: any) => ({
     id: c.id,
     name: c.name,
     status: c.status as CampaignStatus,
     objective: c.objective ?? "",
     daily_budget: c.daily_budget ? parseInt(c.daily_budget) / 100 : undefined,
     lifetime_budget: c.lifetime_budget ? parseInt(c.lifetime_budget) / 100 : undefined,
-    insights: parseInsights(c.insights),
+    insights: insightsMap[c.id] ?? EMPTY_INSIGHTS,
   }));
 }
 
@@ -129,51 +149,60 @@ export async function getAccountSummary(datePreset = "last_30d"): Promise<Accoun
   const d = data.data?.[0];
   if (!d) return { spend: 0, impressions: 0, clicks: 0, leads: 0, cpl: 0, ctr: 0 };
 
-  const leadAction = d.actions?.find((a: any) => LEAD_ACTIONS.includes(a.action_type));
-  const leadCost = d.cost_per_action_type?.find((a: any) =>
-    LEAD_ACTIONS.includes(a.action_type)
-  );
-
+  const ins = parseInsightsRow(d);
   return {
-    spend: parseFloat(d.spend ?? "0"),
-    impressions: parseInt(d.impressions ?? "0"),
-    clicks: parseInt(d.clicks ?? "0"),
-    leads: parseInt(leadAction?.value ?? "0"),
-    cpl: parseFloat(leadCost?.value ?? "0"),
-    ctr: parseFloat(d.ctr ?? "0"),
+    spend: ins.spend,
+    impressions: ins.impressions,
+    clicks: ins.clicks,
+    leads: ins.leads,
+    cpl: ins.cpl,
+    ctr: ins.ctr,
   };
 }
 
 export async function getAdSets(campaignId: string, datePreset = "last_30d"): Promise<AdSet[]> {
-  if (!token()) return [];
+  if (!token() || !adAccount()) return [];
 
-  const fields = [
-    "id",
-    "name",
-    "status",
-    "daily_budget",
-    "lifetime_budget",
-    `insights.date_preset(${datePreset}){${INSIGHT_FIELDS}}`,
-  ].join(",");
-
-  const params = new URLSearchParams({
-    fields,
+  const adsetParams = new URLSearchParams({
+    fields: "id,name,status,daily_budget,lifetime_budget",
     access_token: token(),
     limit: "20",
   });
 
-  const res = await fetch(`${BASE}/${campaignId}/adsets?${params}`, {
-    cache: "no-store",
+  const insightParams = new URLSearchParams({
+    date_preset: datePreset,
+    level: "adset",
+    fields: `adset_id,${INSIGHT_FIELDS}`,
+    filtering: JSON.stringify([
+      { field: "campaign.id", operator: "IN", value: [campaignId] },
+    ]),
+    access_token: token(),
+    limit: "20",
   });
-  const data = await res.json();
-  if (data.error) throw new Error(data.error.message);
 
-  return (data.data ?? []).map((s: any) => ({
+  const [adsetsRes, insightsRes] = await Promise.all([
+    fetch(`${BASE}/${campaignId}/adsets?${adsetParams}`, { cache: "no-store" }),
+    fetch(`${BASE}/${adAccount()}/insights?${insightParams}`, { cache: "no-store" }),
+  ]);
+
+  const [adsetsData, insightsData] = await Promise.all([
+    adsetsRes.json(),
+    insightsRes.json(),
+  ]);
+
+  if (adsetsData.error) throw new Error(adsetsData.error.message);
+
+  const insightsMap: Record<string, CampaignInsights> = {};
+  for (const row of insightsData.data ?? []) {
+    insightsMap[row.adset_id] = parseInsightsRow(row);
+  }
+
+  return (adsetsData.data ?? []).map((s: any) => ({
     id: s.id,
     name: s.name,
     status: s.status as CampaignStatus,
     daily_budget: s.daily_budget ? parseInt(s.daily_budget) / 100 : undefined,
     lifetime_budget: s.lifetime_budget ? parseInt(s.lifetime_budget) / 100 : undefined,
-    insights: parseInsights(s.insights),
+    insights: insightsMap[s.id] ?? EMPTY_INSIGHTS,
   }));
 }
