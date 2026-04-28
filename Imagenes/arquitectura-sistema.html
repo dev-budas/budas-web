@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Arquitectura del Sistema — Budas del Mediterráneo</title>
+<style>
+  :root {
+    --primary: #1B3A5C;
+    --primary-light: #2a5080;
+    --accent: #C9A96E;
+    --bg: #F8F7F4;
+    --surface: #FFFFFF;
+    --border: #E5E2DC;
+    --text: #1a1a1a;
+    --muted: #6b7280;
+    --green: #10B981;
+    --red: #EF4444;
+    --blue: #3B82F6;
+    --purple: #8B5CF6;
+    --orange: #F59E0B;
+    --pink: #EC4899;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.6; }
+
+  .page { max-width: 1100px; margin: 0 auto; padding: 48px 24px; }
+
+  /* Header */
+  .header { text-align: center; margin-bottom: 56px; }
+  .header-badge { display: inline-block; background: var(--primary); color: white; font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; padding: 5px 14px; border-radius: 100px; margin-bottom: 16px; }
+  .header h1 { font-size: 32px; font-weight: 700; color: var(--primary); margin-bottom: 8px; }
+  .header p { color: var(--muted); font-size: 15px; }
+
+  /* Section */
+  .section { margin-bottom: 48px; }
+  .section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  /* Cards */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px 24px; }
+  .card-title { font-size: 13px; font-weight: 700; color: var(--primary); margin-bottom: 12px; }
+
+  /* Grid */
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .grid-auto { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+
+  /* Pillars */
+  .pillar { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; text-align: center; }
+  .pillar-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; margin: 0 auto 12px; }
+  .pillar-title { font-weight: 700; font-size: 15px; margin-bottom: 6px; }
+  .pillar-desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
+  .pillar-url { font-size: 11px; font-family: monospace; background: var(--bg); padding: 3px 8px; border-radius: 6px; margin-top: 10px; display: inline-block; color: var(--primary); }
+
+  /* Lead flow */
+  .flow { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+  .flow-step { display: flex; align-items: center; gap: 6px; }
+  .badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 100px; white-space: nowrap; }
+  .arrow { color: var(--muted); font-size: 16px; }
+
+  /* Table */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 10px 14px; background: var(--bg); color: var(--muted); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid var(--border); }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  .mono { font-family: monospace; font-size: 12px; background: #f3f4f6; padding: 2px 6px; border-radius: 4px; }
+
+  /* Permissions */
+  .perm-yes { color: var(--green); font-weight: 700; }
+  .perm-no { color: var(--red); font-weight: 700; }
+  .perm-cond { color: var(--orange); font-weight: 700; }
+
+  /* DB Table */
+  .db-table { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .db-table-header { background: var(--primary); color: white; padding: 10px 16px; font-size: 12px; font-weight: 700; display: flex; align-items: center; gap-8px; }
+  .db-table-header span { font-family: monospace; }
+  .db-col { display: flex; justify-content: space-between; align-items: center; padding: 7px 16px; border-bottom: 1px solid var(--border); font-size: 12px; }
+  .db-col:last-child { border-bottom: none; }
+  .db-col-name { font-family: monospace; color: var(--primary); font-weight: 500; }
+  .db-col-type { color: var(--muted); font-size: 11px; }
+  .db-pk { font-size: 10px; background: var(--accent); color: white; padding: 1px 6px; border-radius: 4px; margin-left: 6px; }
+  .db-fk { font-size: 10px; background: var(--blue); color: white; padding: 1px 6px; border-radius: 4px; margin-left: 6px; }
+
+  /* Email triggers */
+  .trigger { display: flex; align-items: flex-start; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--border); }
+  .trigger:last-child { border-bottom: none; }
+  .trigger-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+  .trigger-title { font-weight: 600; font-size: 13px; margin-bottom: 3px; }
+  .trigger-desc { font-size: 12px; color: var(--muted); }
+
+  /* Agent */
+  .agent-card { background: linear-gradient(135deg, var(--primary) 0%, #2a5080 100%); color: white; border-radius: 14px; padding: 24px; }
+  .agent-name { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .agent-role { font-size: 13px; opacity: 0.7; margin-bottom: 20px; }
+  .agent-props { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .agent-prop { background: rgba(255,255,255,0.1); border-radius: 10px; padding: 12px; }
+  .agent-prop-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.6; margin-bottom: 4px; }
+  .agent-prop-value { font-size: 13px; font-weight: 600; }
+
+  /* Disqualify list */
+  .disq-item { display: flex; align-items: flex-start; gap-8px; padding: 6px 0; font-size: 13px; }
+  .disq-item::before { content: '✕'; color: var(--red); font-weight: 700; margin-right: 8px; flex-shrink: 0; }
+  .qual-item { display: flex; align-items: flex-start; gap-8px; padding: 6px 0; font-size: 13px; }
+  .qual-item::before { content: '✓'; color: var(--green); font-weight: 700; margin-right: 8px; flex-shrink: 0; }
+
+  /* Stack tags */
+  .tag { display: inline-block; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 6px; margin: 3px; }
+  .tag-blue { background: #EFF6FF; color: #1D4ED8; }
+  .tag-green { background: #F0FDF4; color: #166534; }
+  .tag-purple { background: #F5F3FF; color: #5B21B6; }
+  .tag-orange { background: #FFF7ED; color: #9A3412; }
+  .tag-gray { background: #F9FAFB; color: #374151; border: 1px solid var(--border); }
+
+  /* Route list */
+  .route { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .route:last-child { border-bottom: none; }
+  .route-method { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; width: 38px; text-align: center; flex-shrink: 0; }
+  .route-path { font-family: monospace; font-weight: 500; color: var(--primary); }
+  .route-desc { color: var(--muted); margin-left: auto; text-align: right; font-size: 12px; }
+  .method-get { background: #D1FAE5; color: #065F46; }
+  .method-post { background: #DBEAFE; color: #1E40AF; }
+  .method-page { background: #F3F4F6; color: #374151; }
+
+  /* Connector diagram */
+  .diagram { display: flex; align-items: center; justify-content: center; gap: 0; flex-wrap: wrap; margin: 24px 0; }
+  .diag-box { background: var(--surface); border: 2px solid var(--border); border-radius: 12px; padding: 16px 20px; text-align: center; min-width: 140px; }
+  .diag-box.accent { border-color: var(--accent); background: #FDF8F0; }
+  .diag-box.primary { border-color: var(--primary); background: #EEF3F8; }
+  .diag-arrow { font-size: 24px; color: var(--muted); padding: 0 8px; }
+  .diag-label { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .diag-title { font-weight: 700; font-size: 13px; color: var(--primary); }
+
+  @media (max-width: 700px) {
+    .grid-3, .grid-2 { grid-template-columns: 1fr; }
+    .agent-props { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-badge">Documentación técnica</div>
+    <h1>Arquitectura del Sistema</h1>
+    <p>Budas del Mediterráneo · CRM + Landing + Bot WhatsApp · Abril 2026</p>
+  </div>
+
+  <!-- Stack -->
+  <div class="section">
+    <div class="section-title">Stack tecnológico</div>
+    <div class="card">
+      <div style="display:flex;flex-wrap:wrap;gap:4px;">
+        <span class="tag tag-blue">Next.js 16 (App Router)</span>
+        <span class="tag tag-blue">TypeScript</span>
+        <span class="tag tag-green">Supabase (PostgreSQL + Auth)</span>
+        <span class="tag tag-green">Supabase RLS</span>
+        <span class="tag tag-purple">Anthropic Claude API</span>
+        <span class="tag tag-purple">claude-sonnet-4-6</span>
+        <span class="tag tag-orange">WhatsApp Business Cloud API</span>
+        <span class="tag tag-orange">Resend (email)</span>
+        <span class="tag tag-gray">Tailwind CSS v4</span>
+        <span class="tag tag-gray">@dnd-kit (Kanban)</span>
+        <span class="tag tag-gray">react-hook-form + Zod</span>
+        <span class="tag tag-gray">Vercel (deploy)</span>
+        <span class="tag tag-gray">Cloudflare (DNS)</span>
+        <span class="tag tag-gray">Dreamhost (hosting email)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Three pillars -->
+  <div class="section">
+    <div class="section-title">Los tres módulos del sistema</div>
+    <div class="grid-3">
+      <div class="pillar">
+        <div class="pillar-icon" style="background:#EEF3F8;">🏠</div>
+        <div class="pillar-title" style="color:var(--primary)">Landing Page</div>
+        <div class="pillar-desc">Formulario público de captación de leads desde Meta Ads. Dos pasos: datos personales → datos de propiedad.</div>
+        <span class="pillar-url">lp1.budasdelmediterraneo.com</span>
+      </div>
+      <div class="pillar">
+        <div class="pillar-icon" style="background:#F0FDF4;">📋</div>
+        <div class="pillar-title" style="color:#166534">CRM Interno</div>
+        <div class="pillar-desc">Panel de gestión de leads con pipeline Kanban, lista de leads, calendario de visitas, estadísticas y configuración.</div>
+        <span class="pillar-url">/crm</span>
+      </div>
+      <div class="pillar">
+        <div class="pillar-icon" style="background:#F5F3FF;">🤖</div>
+        <div class="pillar-title" style="color:#5B21B6">Bot WhatsApp (Silvina)</div>
+        <div class="pillar-desc">Agente de IA que conversa con el lead, extrae datos clave y decide si califica o no. Máx. 10 turnos.</div>
+        <span class="pillar-url">API Claude + Meta WABA</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lead Lifecycle -->
+  <div class="section">
+    <div class="section-title">Ciclo de vida del lead</div>
+    <div class="card">
+      <div class="card-title">Flujo completo desde el formulario hasta el cierre</div>
+      <div class="flow" style="margin-bottom:20px;">
+        <div class="flow-step">
+          <span class="badge" style="background:#F3F4F6;color:#374151">Formulario landing</span>
+          <span class="arrow">→</span>
+        </div>
+        <div class="flow-step">
+          <span class="badge" style="background:#F3F4F680;color:#6B7280">nuevo</span>
+          <span class="arrow">→</span>
+        </div>
+        <div class="flow-step">
+          <span class="badge" style="background:#DBEAFE;color:#1E40AF">bot_enviado</span>
+          <span class="arrow">→</span>
+        </div>
+        <div class="flow-step">
+          <span class="badge" style="background:#F5F3FF;color:#5B21B6">respondio</span>
+          <span class="arrow">→</span>
+        </div>
+        <div class="flow-step">
+          <span class="badge" style="background:#D1FAE5;color:#065F46">calificado</span>
+          <span class="arrow">/ →</span>
+        </div>
+        <div class="flow-step">
+          <span class="badge" style="background:#FEE2E2;color:#991B1B">no_calificado</span>
+        </div>
+      </div>
+      <div class="flow">
+        <div class="flow-step">
+          <span class="badge" style="background:#D1FAE5;color:#065F46">calificado</span>
+          <span class="arrow">→</span>
+        </div>
+        <div class="flow-step">
+          <span class="badge" style="background:#FEF3C7;color:#92400E">en_seguimiento</span>
+          <span class="arrow">→</span>
+        </div>
+        <div class="flow-step">
+          <span class="badge" style="background:#FCE7F3;color:#9D174D">visita_agendada</span>
+          <span class="arrow">→</span>
+        </div>
+        <div class="flow-step">
+          <span class="badge" style="background:#EEF3F8;color:#1B3A5C">captado</span>
+          <span class="arrow">/ →</span>
+        </div>
+        <div class="flow-step">
+          <span class="badge" style="background:#F3F4F6;color:#6B7280">perdido</span>
+        </div>
+      </div>
+
+      <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--border);">
+        <div style="font-size:12px;color:var(--muted);line-height:1.9;">
+          <strong style="color:var(--text)">1.</strong> Lead llena formulario → <span class="mono">POST /api/leads</span> → se crea con status <span class="mono">nuevo</span><br>
+          <strong style="color:var(--text)">2.</strong> Se envía mensaje WhatsApp de Silvina → status cambia a <span class="mono">bot_enviado</span><br>
+          <strong style="color:var(--text)">3.</strong> Lead responde → <span class="mono">POST /api/webhooks/whatsapp</span> → status <span class="mono">respondio</span><br>
+          <strong style="color:var(--text)">4.</strong> Silvina conversa (máx. 10 turnos) → llama a herramienta <span class="mono">qualify_lead</span><br>
+          <strong style="color:var(--text)">5.</strong> Bot decide → status <span class="mono">calificado</span> o <span class="mono">no_calificado</span> → email a todo el equipo<br>
+          <strong style="color:var(--text)">6.</strong> Admin asigna agente → email al agente asignado<br>
+          <strong style="color:var(--text)">7.</strong> Agente hace seguimiento → puede agendar visita → status <span class="mono">visita_agendada</span><br>
+          <strong style="color:var(--text)">8.</strong> Cierre → <span class="mono">captado</span> (éxito) o <span class="mono">perdido</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- API Routes -->
+  <div class="section">
+    <div class="section-title">Rutas API y páginas CRM</div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">API Routes (backend)</div>
+        <div class="route">
+          <span class="route-method method-post">POST</span>
+          <span class="route-path">/api/leads</span>
+          <span class="route-desc">Crear lead + disparar bot</span>
+        </div>
+        <div class="route">
+          <span class="route-method method-get">GET</span>
+          <span class="route-path">/api/webhooks/whatsapp</span>
+          <span class="route-desc">Verificación Meta</span>
+        </div>
+        <div class="route">
+          <span class="route-method method-post">POST</span>
+          <span class="route-path">/api/webhooks/whatsapp</span>
+          <span class="route-desc">Mensajes entrantes → bot</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Páginas CRM (requieren auth)</div>
+        <div class="route">
+          <span class="route-method method-page">PAGE</span>
+          <span class="route-path">/crm</span>
+          <span class="route-desc">Dashboard + stats</span>
+        </div>
+        <div class="route">
+          <span class="route-method method-page">PAGE</span>
+          <span class="route-path">/crm/leads</span>
+          <span class="route-desc">Lista de leads</span>
+        </div>
+        <div class="route">
+          <span class="route-method method-page">PAGE</span>
+          <span class="route-path">/crm/leads/[id]</span>
+          <span class="route-desc">Detalle del lead</span>
+        </div>
+        <div class="route">
+          <span class="route-method method-page">PAGE</span>
+          <span class="route-path">/crm/pipeline</span>
+          <span class="route-desc">Kanban drag & drop</span>
+        </div>
+        <div class="route">
+          <span class="route-method method-page">PAGE</span>
+          <span class="route-path">/crm/calendario</span>
+          <span class="route-desc">Visitas por semana</span>
+        </div>
+        <div class="route">
+          <span class="route-method method-page">PAGE</span>
+          <span class="route-path">/crm/estadisticas</span>
+          <span class="route-desc">KPIs y gráficos</span>
+        </div>
+        <div class="route">
+          <span class="route-method method-page">PAGE</span>
+          <span class="route-path">/crm/settings</span>
+          <span class="route-desc">Perfil + gestión equipo</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Database -->
+  <div class="section">
+    <div class="section-title">Base de datos (Supabase / PostgreSQL)</div>
+    <div class="grid-2">
+
+      <div class="db-table">
+        <div class="db-table-header" style="background:var(--primary);color:white;padding:10px 16px;font-size:12px;font-weight:700;">
+          <span>leads</span>
+        </div>
+        <div class="db-col"><span class="db-col-name">id <span class="db-pk">PK</span></span><span class="db-col-type">UUID</span></div>
+        <div class="db-col"><span class="db-col-name">name</span><span class="db-col-type">TEXT</span></div>
+        <div class="db-col"><span class="db-col-name">phone</span><span class="db-col-type">TEXT</span></div>
+        <div class="db-col"><span class="db-col-name">email</span><span class="db-col-type">TEXT?</span></div>
+        <div class="db-col"><span class="db-col-name">status</span><span class="db-col-type">ENUM (9 valores)</span></div>
+        <div class="db-col"><span class="db-col-name">property_city</span><span class="db-col-type">TEXT?</span></div>
+        <div class="db-col"><span class="db-col-name">property_address</span><span class="db-col-type">TEXT?</span></div>
+        <div class="db-col"><span class="db-col-name">property_type</span><span class="db-col-type">ENUM?</span></div>
+        <div class="db-col"><span class="db-col-name">rooms / bathrooms</span><span class="db-col-type">INT?</span></div>
+        <div class="db-col"><span class="db-col-name">estimated_value</span><span class="db-col-type">NUMERIC?</span></div>
+        <div class="db-col"><span class="db-col-name">urgency</span><span class="db-col-type">ENUM?</span></div>
+        <div class="db-col"><span class="db-col-name">is_owner / has_mortgage</span><span class="db-col-type">BOOL?</span></div>
+        <div class="db-col"><span class="db-col-name">assigned_agent <span class="db-fk">FK</span></span><span class="db-col-type">→ auth.users</span></div>
+        <div class="db-col"><span class="db-col-name">whatsapp_conversation</span><span class="db-col-type">JSONB[]</span></div>
+        <div class="db-col"><span class="db-col-name">utm_source / campaign</span><span class="db-col-type">TEXT?</span></div>
+        <div class="db-col"><span class="db-col-name">bot_qualified_at</span><span class="db-col-type">TIMESTAMPTZ?</span></div>
+        <div class="db-col"><span class="db-col-name">created_at / updated_at</span><span class="db-col-type">TIMESTAMPTZ</span></div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div class="db-table">
+          <div style="background:#166534;color:white;padding:10px 16px;font-size:12px;font-weight:700;"><span>profiles</span></div>
+          <div class="db-col"><span class="db-col-name">id <span class="db-pk">PK</span></span><span class="db-col-type">→ auth.users</span></div>
+          <div class="db-col"><span class="db-col-name">full_name</span><span class="db-col-type">TEXT</span></div>
+          <div class="db-col"><span class="db-col-name">role</span><span class="db-col-type">"admin" | "agent"</span></div>
+        </div>
+
+        <div class="db-table">
+          <div style="background:#5B21B6;color:white;padding:10px 16px;font-size:12px;font-weight:700;"><span>lead_notes</span></div>
+          <div class="db-col"><span class="db-col-name">id <span class="db-pk">PK</span></span><span class="db-col-type">UUID</span></div>
+          <div class="db-col"><span class="db-col-name">lead_id <span class="db-fk">FK</span></span><span class="db-col-type">→ leads</span></div>
+          <div class="db-col"><span class="db-col-name">content</span><span class="db-col-type">TEXT</span></div>
+          <div class="db-col"><span class="db-col-name">author_id <span class="db-fk">FK</span></span><span class="db-col-type">→ auth.users</span></div>
+          <div class="db-col"><span class="db-col-name">author_name</span><span class="db-col-type">TEXT</span></div>
+          <div class="db-col"><span class="db-col-name">created_at</span><span class="db-col-type">TIMESTAMPTZ</span></div>
+        </div>
+
+        <div class="db-table">
+          <div style="background:#9D174D;color:white;padding:10px 16px;font-size:12px;font-weight:700;"><span>visits</span></div>
+          <div class="db-col"><span class="db-col-name">id <span class="db-pk">PK</span></span><span class="db-col-type">UUID</span></div>
+          <div class="db-col"><span class="db-col-name">lead_id <span class="db-fk">FK</span></span><span class="db-col-type">→ leads</span></div>
+          <div class="db-col"><span class="db-col-name">agent_id <span class="db-fk">FK</span></span><span class="db-col-type">→ auth.users</span></div>
+          <div class="db-col"><span class="db-col-name">scheduled_at</span><span class="db-col-type">TIMESTAMPTZ</span></div>
+          <div class="db-col"><span class="db-col-name">address</span><span class="db-col-type">TEXT?</span></div>
+          <div class="db-col"><span class="db-col-name">status</span><span class="db-col-type">pending/confirmed/completed/cancelled</span></div>
+          <div class="db-col"><span class="db-col-name">notes</span><span class="db-col-type">TEXT?</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Permissions -->
+  <div class="section">
+    <div class="section-title">Permisos y control de acceso (RBAC)</div>
+    <div class="card">
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Acción</th>
+              <th>Admin</th>
+              <th>Agente (lead propio)</th>
+              <th>Agente (lead sin asignar)</th>
+              <th>Agente (lead de otro)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Ver lead</td>
+              <td class="perm-yes">✓ Sí</td>
+              <td class="perm-yes">✓ Sí</td>
+              <td class="perm-yes">✓ Sí</td>
+              <td class="perm-yes">✓ Sí</td>
+            </tr>
+            <tr>
+              <td>Cambiar estado del lead</td>
+              <td class="perm-yes">✓ Sí</td>
+              <td class="perm-yes">✓ Sí</td>
+              <td class="perm-no">✗ No</td>
+              <td class="perm-no">✗ No</td>
+            </tr>
+            <tr>
+              <td>Añadir nota</td>
+              <td class="perm-yes">✓ Sí</td>
+              <td class="perm-yes">✓ Sí</td>
+              <td class="perm-no">✗ No</td>
+              <td class="perm-no">✗ No</td>
+            </tr>
+            <tr>
+              <td>Agendar visita</td>
+              <td class="perm-yes">✓ Sí</td>
+              <td class="perm-yes">✓ Sí</td>
+              <td class="perm-no">✗ No</td>
+              <td class="perm-no">✗ No</td>
+            </tr>
+            <tr>
+              <td>Asignar agente</td>
+              <td class="perm-yes">✓ Cualquiera</td>
+              <td class="perm-no">✗ No</td>
+              <td class="perm-cond">~ Solo a sí mismo</td>
+              <td class="perm-no">✗ No</td>
+            </tr>
+            <tr>
+              <td>Reasignar agente</td>
+              <td class="perm-yes">✓ Sí</td>
+              <td class="perm-no">✗ No</td>
+              <td class="perm-no">✗ No</td>
+              <td class="perm-no">✗ No</td>
+            </tr>
+            <tr>
+              <td>Mover en pipeline (drag)</td>
+              <td class="perm-yes">✓ Sí</td>
+              <td class="perm-yes">✓ Sí</td>
+              <td class="perm-no">✗ No</td>
+              <td class="perm-no">✗ No</td>
+            </tr>
+            <tr>
+              <td>Crear usuarios del equipo</td>
+              <td class="perm-yes">✓ Sí</td>
+              <td class="perm-no">✗ No</td>
+              <td class="perm-no">✗ No</td>
+              <td class="perm-no">✗ No</td>
+            </tr>
+            <tr>
+              <td>Eliminar usuarios del equipo</td>
+              <td class="perm-yes">✓ Sí (no a sí mismo)</td>
+              <td class="perm-no">✗ No</td>
+              <td class="perm-no">✗ No</td>
+              <td class="perm-no">✗ No</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top:14px;font-size:12px;color:var(--muted);background:var(--bg);padding:10px 14px;border-radius:8px;">
+        <strong style="color:var(--text)">Capa de seguridad:</strong> Los permisos se verifican en <strong>dos capas</strong>: (1) Server Actions en el servidor lanzan error si no hay permiso, incluso si el cliente intenta forzarlo. (2) La UI deshabilita los controles visualmente para guiar al usuario.
+      </div>
+    </div>
+  </div>
+
+  <!-- Email notifications -->
+  <div class="section">
+    <div class="section-title">Notificaciones por email (Resend)</div>
+    <div class="card">
+      <div class="trigger">
+        <div class="trigger-dot" style="background:var(--green)"></div>
+        <div>
+          <div class="trigger-title">Lead calificado</div>
+          <div class="trigger-desc">Disparado desde el bot (automático) o cuando un agente/admin cambia el status manualmente. Se envía a <strong>todo el equipo</strong>. CTA: "Ver lead y asignar agente".</div>
+        </div>
+      </div>
+      <div class="trigger">
+        <div class="trigger-dot" style="background:var(--red)"></div>
+        <div>
+          <div class="trigger-title">Lead no calificado</div>
+          <div class="trigger-desc">Igual que el anterior. Se envía a <strong>todo el equipo</strong> para que revisen la conversación de WhatsApp y decidan si reclasificar. CTA: "Revisar conversación".</div>
+        </div>
+      </div>
+      <div class="trigger">
+        <div class="trigger-dot" style="background:var(--accent)"></div>
+        <div>
+          <div class="trigger-title">Lead asignado a agente</div>
+          <div class="trigger-desc">Cuando el admin asigna un lead, o cuando un agente se auto-asigna. Se envía <strong>solo al agente asignado</strong>. CTA: "Ver lead".</div>
+        </div>
+      </div>
+      <div style="margin-top:16px;font-size:12px;color:var(--muted);background:var(--bg);padding:10px 14px;border-radius:8px;">
+        <strong style="color:var(--text)">Dominio de envío:</strong> <span class="mono">no-reply@notificaciones.budasdelmediterraneo.com</span> · Proveedor: Resend · DNS: Cloudflare
+      </div>
+    </div>
+  </div>
+
+  <!-- Agent -->
+  <div class="section">
+    <div class="section-title">Agente de IA — Silvina</div>
+    <div class="agent-card">
+      <div class="agent-name">Silvina</div>
+      <div class="agent-role">Agente de captación · Equipo comercial de Budas del Mediterráneo</div>
+      <div class="agent-props">
+        <div class="agent-prop">
+          <div class="agent-prop-label">Modelo</div>
+          <div class="agent-prop-value">claude-sonnet-4-6</div>
+        </div>
+        <div class="agent-prop">
+          <div class="agent-prop-label">Max. turnos</div>
+          <div class="agent-prop-value">10</div>
+        </div>
+        <div class="agent-prop">
+          <div class="agent-prop-label">Zonas cubiertas</div>
+          <div class="agent-prop-value">Madrid · Valencia · Andalucía</div>
+        </div>
+        <div class="agent-prop">
+          <div class="agent-prop-label">Prompt activo</div>
+          <div class="agent-prop-value">agents/silvina.md</div>
+        </div>
+        <div class="agent-prop">
+          <div class="agent-prop-label">Herramienta</div>
+          <div class="agent-prop-value">qualify_lead (tool use)</div>
+        </div>
+        <div class="agent-prop">
+          <div class="agent-prop-label">Cambiar agente</div>
+          <div class="agent-prop-value">env var ACTIVE_AGENT</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:16px;" class="grid-2">
+      <div class="card">
+        <div class="card-title" style="color:var(--red)">Criterios de descalificación</div>
+        <div class="disq-item">Propiedad fuera de zona</div>
+        <div class="disq-item">No es propietario</div>
+        <div class="disq-item">Plazo de venta mayor a 60 días</div>
+        <div class="disq-item">Propiedad con ocupación ilegal</div>
+        <div class="disq-item">Sin intención real de venta</div>
+        <div class="disq-item">Sin respuesta útil tras varios turnos</div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="color:var(--green)">Criterios de cualificación</div>
+        <div class="qual-item">Propiedad en zona cubierta</div>
+        <div class="qual-item">Es propietario (incluso parcial)</div>
+        <div class="qual-item">Quiere vender en menos de 60 días</div>
+        <div class="qual-item">Propiedad libre o con contrato legal</div>
+        <div class="qual-item">Motivación concreta y real</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Data extracted by bot -->
+  <div class="section">
+    <div class="section-title">Datos extraídos por el bot y guardados en el lead</div>
+    <div class="card">
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr><th>Campo</th><th>Tipo</th><th>Descripción</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><span class="mono">is_owner</span></td><td>boolean</td><td>Si la persona es propietaria del inmueble</td></tr>
+            <tr><td><span class="mono">property_type</span></td><td>enum</td><td>piso, casa, chalet, local_comercial, terreno, otro</td></tr>
+            <tr><td><span class="mono">property_city</span></td><td>text</td><td>Ciudad o zona detectada en conversación</td></tr>
+            <tr><td><span class="mono">urgency</span></td><td>enum</td><td>inmediato, 3_meses, 6_meses, sin_prisa</td></tr>
+            <tr><td><span class="mono">has_mortgage</span></td><td>boolean</td><td>Si hay hipoteca pendiente</td></tr>
+            <tr><td><span class="mono">notes</span></td><td>text</td><td>Motivación detectada (separación, herencia, etc.)</td></tr>
+            <tr><td><span class="mono">bot_qualified_at</span></td><td>timestamp</td><td>Momento exacto en que el bot tomó la decisión</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Env vars -->
+  <div class="section">
+    <div class="section-title">Variables de entorno requeridas</div>
+    <div class="card">
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr><th>Variable</th><th>Servicio</th><th>Descripción</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><span class="mono">NEXT_PUBLIC_SUPABASE_URL</span></td><td>Supabase</td><td>URL del proyecto</td></tr>
+            <tr><td><span class="mono">NEXT_PUBLIC_SUPABASE_ANON_KEY</span></td><td>Supabase</td><td>Clave pública (auth en cliente)</td></tr>
+            <tr><td><span class="mono">SUPABASE_SERVICE_ROLE_KEY</span></td><td>Supabase</td><td>Clave admin (server actions, bypasa RLS)</td></tr>
+            <tr><td><span class="mono">ANTHROPIC_API_KEY</span></td><td>Claude API</td><td>Acceso a claude-sonnet-4-6</td></tr>
+            <tr><td><span class="mono">WHATSAPP_PHONE_NUMBER_ID</span></td><td>Meta WABA</td><td>ID del número de teléfono del bot</td></tr>
+            <tr><td><span class="mono">WHATSAPP_ACCESS_TOKEN</span></td><td>Meta WABA</td><td>Token de acceso permanente</td></tr>
+            <tr><td><span class="mono">WHATSAPP_VERIFY_TOKEN</span></td><td>Meta WABA</td><td>Token de verificación del webhook</td></tr>
+            <tr><td><span class="mono">RESEND_API_KEY</span></td><td>Resend</td><td>API key para envío de emails</td></tr>
+            <tr><td><span class="mono">RESEND_FROM_EMAIL</span></td><td>Resend</td><td>Dirección remitente verificada</td></tr>
+            <tr><td><span class="mono">APP_URL</span></td><td>General</td><td>URL base del CRM (para links en emails)</td></tr>
+            <tr><td><span class="mono">ACTIVE_AGENT</span></td><td>Bot</td><td>Nombre del agente activo (default: silvina)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div style="text-align:center;padding-top:32px;border-top:1px solid var(--border);color:var(--muted);font-size:12px;">
+    Budas del Mediterráneo · Sistema generado con Claude Code · Abril 2026
+  </div>
+
+</div>
+</body>
+</html>

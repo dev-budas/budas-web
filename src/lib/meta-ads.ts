@@ -208,3 +208,169 @@ export async function getAdSets(campaignId: string, datePreset = "last_30d"): Pr
     insights: insightsMap[s.id] ?? EMPTY_INSIGHTS,
   }));
 }
+
+/* ─── Daily insights (chart) ─────────────────────────────────────────────── */
+
+export interface DailyInsight {
+  date: string;
+  spend: number;
+  impressions: number;
+  clicks: number;
+  leads: number;
+}
+
+export async function getDailyInsights(datePreset = "last_30d"): Promise<DailyInsight[]> {
+  if (!token() || !adAccount()) return [];
+
+  const params = new URLSearchParams({
+    date_preset: datePreset,
+    time_increment: "1",
+    fields: "spend,impressions,clicks,actions",
+    access_token: token(),
+    limit: "90",
+  });
+
+  const res = await fetch(`${BASE}/${adAccount()}/insights?${params}`, {
+    next: { revalidate: 300 },
+  });
+  const data = await res.json();
+  if (data.error) return [];
+
+  return (data.data ?? []).map((d: any) => ({
+    date: d.date_start as string,
+    spend: parseFloat(d.spend ?? "0"),
+    impressions: parseInt(d.impressions ?? "0"),
+    clicks: parseInt(d.clicks ?? "0"),
+    leads: parseInt(
+      d.actions?.find((a: any) => LEAD_ACTIONS.includes(a.action_type))?.value ?? "0"
+    ),
+  }));
+}
+
+/* ─── Audience breakdown ─────────────────────────────────────────────────── */
+
+export interface AudienceRow {
+  key: string;
+  label: string;
+  spend: number;
+  impressions: number;
+  clicks: number;
+  leads: number;
+}
+
+const BREAKDOWN_LABELS: Record<string, Record<string, string>> = {
+  gender: { male: "Hombres", female: "Mujeres", unknown: "Desconocido" },
+  device_platform: {
+    mobile_app: "App móvil",
+    desktop: "Escritorio",
+    mobile_web: "Web móvil",
+    instagram: "Instagram",
+    facebook: "Facebook",
+    messenger: "Messenger",
+    audience_network: "Audience Network",
+  },
+};
+
+function breakdownLabel(type: string, value: string): string {
+  return BREAKDOWN_LABELS[type]?.[value] ?? value;
+}
+
+export async function getAudienceBreakdown(
+  breakdown: "age" | "gender" | "region" | "device_platform",
+  datePreset = "last_30d"
+): Promise<AudienceRow[]> {
+  if (!token() || !adAccount()) return [];
+
+  const params = new URLSearchParams({
+    date_preset: datePreset,
+    breakdowns: breakdown,
+    fields: `spend,impressions,clicks,actions,${breakdown}`,
+    access_token: token(),
+    limit: "50",
+  });
+
+  const res = await fetch(`${BASE}/${adAccount()}/insights?${params}`, {
+    cache: "no-store",
+  });
+  const data = await res.json();
+  if (data.error) return [];
+
+  return (data.data ?? [])
+    .map((d: any) => ({
+      key: d[breakdown] as string,
+      label: breakdownLabel(breakdown, d[breakdown]),
+      spend: parseFloat(d.spend ?? "0"),
+      impressions: parseInt(d.impressions ?? "0"),
+      clicks: parseInt(d.clicks ?? "0"),
+      leads: parseInt(
+        d.actions?.find((a: any) => LEAD_ACTIONS.includes(a.action_type))?.value ?? "0"
+      ),
+    }))
+    .sort((a: AudienceRow, b: AudienceRow) => b.spend - a.spend);
+}
+
+/* ─── Ads ────────────────────────────────────────────────────────────────── */
+
+export interface Ad {
+  id: string;
+  name: string;
+  status: string;
+  thumbnail_url?: string;
+  headline?: string;
+  body?: string;
+  insights: CampaignInsights;
+}
+
+export async function getAds(adsetId: string, datePreset = "last_30d"): Promise<Ad[]> {
+  if (!token() || !adAccount()) return [];
+
+  const adParams = new URLSearchParams({
+    fields: "id,name,status,creative{thumbnail_url,body,title,object_story_spec}",
+    access_token: token(),
+    limit: "20",
+  });
+
+  const insightBase = new URLSearchParams({
+    date_preset: datePreset,
+    level: "ad",
+    fields: `ad_id,${INSIGHT_FIELDS}`,
+    access_token: token(),
+    limit: "20",
+  });
+  const insightUrl =
+    `${BASE}/${adAccount()}/insights?${insightBase}` +
+    `&filtering=[{"field":"adset.id","operator":"IN","value":["${adsetId}"]}]`;
+
+  const [adsRes, insightsRes] = await Promise.all([
+    fetch(`${BASE}/${adsetId}/ads?${adParams}`, { cache: "no-store" }),
+    fetch(insightUrl, { cache: "no-store" }),
+  ]);
+
+  const [adsData, insightsData] = await Promise.all([
+    adsRes.json(),
+    insightsRes.json(),
+  ]);
+
+  if (adsData.error) throw new Error(adsData.error.message);
+
+  const insightsMap: Record<string, CampaignInsights> = {};
+  for (const row of insightsData.data ?? []) {
+    insightsMap[row.ad_id] = parseInsightsRow(row);
+  }
+
+  return (adsData.data ?? [])
+    .filter((a: any) => a.status !== "DELETED")
+    .map((a: any) => {
+      const creative = a.creative;
+      const linkData = creative?.object_story_spec?.link_data;
+      return {
+        id: a.id,
+        name: a.name,
+        status: a.status as string,
+        thumbnail_url: creative?.thumbnail_url ?? linkData?.picture ?? undefined,
+        headline: creative?.title ?? linkData?.name ?? undefined,
+        body: creative?.body ?? linkData?.message ?? undefined,
+        insights: insightsMap[a.id] ?? EMPTY_INSIGHTS,
+      };
+    });
+}

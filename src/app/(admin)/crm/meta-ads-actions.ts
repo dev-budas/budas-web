@@ -44,7 +44,6 @@ export async function updateCampaignBudget(
 ) {
   await requireAdmin();
 
-  // Meta expects budget in cents
   const daily_budget = Math.round(dailyBudget * 100).toString();
 
   const res = await fetch(`${BASE}/${campaignId}`, {
@@ -54,6 +53,42 @@ export async function updateCampaignBudget(
       daily_budget,
       access_token: process.env.META_ADS_ACCESS_TOKEN,
     }),
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message);
+  revalidatePath("/crm/campanas");
+}
+
+export async function updateCampaignName(campaignId: string, name: string) {
+  await requireAdmin();
+
+  const res = await fetch(`${BASE}/${campaignId}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, access_token: process.env.META_ADS_ACCESS_TOKEN }),
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message);
+  revalidatePath("/crm/campanas");
+}
+
+export async function updateCampaignDates(
+  campaignId: string,
+  startTime?: string,
+  stopTime?: string
+) {
+  await requireAdmin();
+
+  const body: Record<string, string> = {
+    access_token: process.env.META_ADS_ACCESS_TOKEN!,
+  };
+  if (startTime) body.start_time = startTime;
+  if (stopTime) body.stop_time = stopTime;
+
+  const res = await fetch(`${BASE}/${campaignId}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
   });
   const data = await res.json();
   if (data.error) throw new Error(data.error.message);
