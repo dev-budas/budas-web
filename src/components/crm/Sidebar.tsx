@@ -20,15 +20,15 @@ import { Logo } from "@/components/shared/Logo";
 import type { ResolvedPermissions } from "@/lib/permissions";
 
 const allNavItems = [
-  { href: "/crm",                label: "Dashboard",     icon: LayoutDashboard, exact: true,  permission: null },
-  { href: "/crm/clientes",       label: "Clientes",      icon: UserCheck,       exact: false, permission: null },
-  { href: "/crm/leads",          label: "Leads",         icon: Users,           exact: false, permission: null },
-  { href: "/crm/pipeline",       label: "Pipeline",      icon: Kanban,          exact: false, permission: null },
-  { href: "/crm/conversaciones", label: "WhatsApp",      icon: MessageSquare,   exact: false, permission: null },
-  { href: "/crm/campanas",       label: "Campañas",      icon: Megaphone,       exact: false, permission: null },
-  { href: "/crm/calendario",     label: "Calendario",    icon: Calendar,        exact: false, permission: null },
-  { href: "/crm/estadisticas",   label: "Estadísticas",  icon: BarChart3,       exact: false, permission: "view_stats" as const },
-  { href: "/crm/settings",       label: "Configuración", icon: Settings,        exact: false, permission: null },
+  { href: "/crm",                label: "Dashboard",     icon: LayoutDashboard, exact: true,  permission: null,             adminOnly: false },
+  { href: "/crm/clientes",       label: "Clientes",      icon: UserCheck,       exact: false, permission: null,             adminOnly: false },
+  { href: "/crm/leads",          label: "Leads",         icon: Users,           exact: false, permission: null,             adminOnly: false },
+  { href: "/crm/pipeline",       label: "Pipeline",      icon: Kanban,          exact: false, permission: null,             adminOnly: false },
+  { href: "/crm/conversaciones", label: "WhatsApp",      icon: MessageSquare,   exact: false, permission: null,             adminOnly: false },
+  { href: "/crm/campanas",       label: "Campañas",      icon: Megaphone,       exact: false, permission: null,             adminOnly: true  },
+  { href: "/crm/calendario",     label: "Calendario",    icon: Calendar,        exact: false, permission: null,             adminOnly: false },
+  { href: "/crm/estadisticas",   label: "Estadísticas",  icon: BarChart3,       exact: false, permission: "view_stats" as const, adminOnly: false },
+  { href: "/crm/settings",       label: "Configuración", icon: Settings,        exact: false, permission: null,             adminOnly: false },
 ];
 
 interface CRMSidebarProps {
@@ -42,9 +42,10 @@ export function CRMSidebar({ userEmail, userRole, userName, permissions }: CRMSi
   const pathname = usePathname();
   const router = useRouter();
 
-  const navItems = allNavItems.filter(({ permission }) => {
+  const navItems = allNavItems.filter(({ permission, adminOnly }) => {
+    if (adminOnly && userRole !== "admin") return false;
     if (!permission) return true;
-    if (!permissions) return true; // show all if no permissions loaded yet
+    if (!permissions) return true;
     return permissions[permission];
   });
 

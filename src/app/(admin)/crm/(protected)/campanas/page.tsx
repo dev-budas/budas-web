@@ -1,6 +1,7 @@
 import { getCampaigns, getAccountSummary } from "@/lib/meta-ads";
 import type { Campaign, AccountSummary } from "@/lib/meta-ads";
 import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
 import { Euro, Users, TrendingUp, MousePointer, AlertCircle } from "lucide-react";
 import CampaignsTable from "@/components/crm/CampaignsTable";
 import type { ElementType } from "react";
@@ -23,6 +24,14 @@ export default async function CampanasPage({
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (profile?.role !== "admin") redirect("/crm");
 
   const { preset = "last_30d" } = await searchParams;
 
